@@ -1,0 +1,84 @@
+# Ignore node_modules folder
+/node_modules
+
+# Ignore environment variable files
+.env
+
+# Ignore log files
+*.log
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore coverage directory
+/coverage
+
+# Ignore build output
+/dist
+/build
+
+# Ignore temporary files
+tmp
+temp
+*.tmp
+*.temp
+
+# Ignore editor and IDE specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore system files
+*.swp
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+node_modules/
+*.code-workspace
+
+# Ignore Docker related files
+docker-compose.override.yml
+.Dockerfile.swp
+
+# Ignore specific configuration files
+config/local.js
+config/local.json
+
+# Ignore test-related files
+/coverage
+/.nyc_output
+
+# Ignore temporary files created during development
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore build output directories
+/build/
+/dist/
+/out/
+
+# Ignore compiled files
+*.out
+*.exe
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Ignore logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+lerna-debug.log*
