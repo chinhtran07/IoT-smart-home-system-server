@@ -1,7 +1,7 @@
-const User = require("../models/User")
+const db = require('../models');
 
 const getCurrentUser = async (userId) => {
-    const user = User.findByPk(userId, {
+    const user = await db.User.findByPk(userId, {
         attributes: ['id', 'username', 'firstName', 'lastName', 'email', 'role']
     });
 
