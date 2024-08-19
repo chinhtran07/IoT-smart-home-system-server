@@ -8,15 +8,28 @@ const authenticateToken = async (req, res, next) => {
 
     if (token == null) return res.sendStatus(401);
 
-    jwt.verify(token, config.secret, async (err, user) => {
-        if (err) return res.sendStatus(403);
+    try {
+        jwt.verify(token, config.secret, async (err, user) => {
+            if (err) return res.sendStatus(403);
 
-        const dbUser = await User.findByPk(user.id);
-        if(!dbUser) return res.sendStatus(404);
+            const dbUser = await User.findByPk(user.id);
+            if (!dbUser) return res.sendStatus(404);
 
-        req.user = user;
-        next();
-    });
+            req.user = user;
+            next();
+        });
+    } catch (error) {
+        res.status(400).json({message: 'Invalid token'});
+    }
 }
 
-module.exports = authenticateToken;
+const authorize = (roles = []) => {
+    return (req, res, next) => {
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({message: 'Forbidden'});
+        }
+        next();
+    };
+};
+
+module.exports = {authenticateToken, authorize};

@@ -8,7 +8,7 @@ const helmet = require('helmet');
 const passport = require('passport');
 const createError = require('http-errors');
 const {check, validationResult} = require('express-validator');
-const authenticateToken = require('./middlewares/auth.middleware');
+
 
 const app = express();
 
@@ -24,11 +24,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 
 //Routes
-app.use('/api/user' ,require('./routes/auth'));
-
-// app.get('/api/protected', authenticateToken, (req, res) => {
-//     res.json({message: 'This is a protected route', user: req.user});
-// });
+app.use('/api/auth' ,require('./routes/auth.routes'));  
 
 
 //Error handle middleware

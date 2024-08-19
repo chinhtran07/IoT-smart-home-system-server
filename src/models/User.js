@@ -1,7 +1,7 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes, ENUM } = require('sequelize');
 const sequelize = require('../config/database');
 
-const User = sequelize.define('user', {
+const User = sequelize.define('User', {
     username: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -24,10 +24,27 @@ const User = sequelize.define('user', {
         allowNull: false,
         unique: true,
     },
+    createdAt: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
     lastLogin: {
         type: DataTypes.DATE,
         allowNull: true,
-    }
+    },
+    dob: {
+        type:DataTypes.DATEONLY,
+        allowNull: true
+    },
+    role: {
+        type: ENUM('Admin', 'Normal'),
+        allowNull: false,
+        defaultValue: 'Normal'
+    },
+    phone: {
+        type: DataTypes.CHAR(11),
+        allowNull: true
+    } 
 }, {
     timestamps: true
 });
