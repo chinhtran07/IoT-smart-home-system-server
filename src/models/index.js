@@ -2,7 +2,7 @@ const {Sequelize, DataTypes} = require('sequelize');
 const fs = require('fs');
 const path = require('path');
 
-const config = require('../config/database.json')['development'];
+const config = require('../../config/config.json')['development'];
 
 const sequelize = new Sequelize(config.database, config.username, config.password, {
     host: config.host,
