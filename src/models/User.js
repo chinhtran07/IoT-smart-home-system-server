@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   });
 
   userSchema.methods.comparePassword = function(candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.passsword);
+    return bcrypt.compare(candidatePassword, this.password);
   }
 
   userSchema.methods.generateAuthToken = function() {
@@ -30,4 +30,6 @@ const userSchema = new mongoose.Schema({
   }
   
   const User = mongoose.model('User', userSchema);
+
+  module.exports = User;
   

@@ -1,7 +1,7 @@
-require('dotenv').config('../.env');
+require('dotenv').config();
 
 module.exports = {
-    mongo_url: process.env.MONGO_URL,
+    mongo_url: process.env.MONGO_URI,
     port: process.env.PORT,
     jwt: {
         secret: process.env.JWT_SECRET,

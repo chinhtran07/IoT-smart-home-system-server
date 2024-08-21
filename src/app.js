@@ -15,13 +15,12 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 
-app.use('/api/auth', require('./routes/auth.routes'));
 
 //middleware
-app.use(authMiddleware.authenticate);
 
 //routes
-
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/user', authMiddleware.authenticate ,require('./routes/user.routes'));
 
 //error handler middleware
 app.use(require('./middlewares/error.middleware'));
