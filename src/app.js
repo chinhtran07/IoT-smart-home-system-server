@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const authMiddleware = require('./middlewares/auth.middleware');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('swagger-jsdoc');
 
 const app = express();
 
@@ -19,6 +21,8 @@ app.use(bodyParser.urlencoded({extended: true}));
 //routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/user', authMiddleware.authenticate ,require('./routes/user.routes'));
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //error handler middleware
 app.use(require('./middlewares/error.middleware'));

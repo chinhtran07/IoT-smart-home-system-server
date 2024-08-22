@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const CustomError = require('../utils/CustomError');
+const paginate = require('../utils/paginator');
 
 const getProfile = async(userId) => {
     const user = await User.findById(userId).select('-password');
@@ -22,15 +23,20 @@ const changePassword = async (userId, currentPassword, newPassword) => {
       throw new CustomError('Current password is incorrect', 400);
     }
   
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    user.password = newPassword;
   
     await user.save();
     return { message: 'Password updated successfully' };
 };
 
-const getAllUsers = async () => {
-    return await User.find().select('-password');
+const getAllUsers = async (queryParams) => {
+    const query = {};
+    const options = {
+      page: queryParams.page,
+      limit: queryParams.limit
+    };
+
+    return await paginate(User, query, options);
 };
 
 const deleteUser = async (userId) => {
