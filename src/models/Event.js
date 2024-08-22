@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const eventSchema = new mongoose.Schema({
     deviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true },
     eventType: { type: String, required: true }, // e.g., motion_detected, temperature_change
@@ -7,3 +9,4 @@ const eventSchema = new mongoose.Schema({
   
   const Event = mongoose.model('Event', eventSchema);
   
+module.exports = Event;
