@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const sensorDataScheme = new mongoose.Schema({
-    sensorId: {
-        type: mongoose.Schema.Types.ObjectId, ref: 'Sensor',
+    deviceId: {
+        type: mongoose.Schema.Types.ObjectId, ref: 'Device',
         required: true,
     },
     value: {
