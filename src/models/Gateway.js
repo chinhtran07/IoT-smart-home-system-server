@@ -6,9 +6,10 @@ const gatewaySchema = new mongoose.Schema({
     ipAddress: { type: String, required: true },
     status: { type: String, enum: ['online', 'offline', 'maintenance'], default: 'offline' },
     lastSeen: { type: Date, default: Date.now },
+    devices: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device' }],
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, {
-    timestamp: true
+    timestamps: true
 });
 
 

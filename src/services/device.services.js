@@ -1,24 +1,44 @@
 const AccessControl = require("../models/AccessControl");
-const { Device, Actuator, Sensor } = require("../models/Device");
+const Device = require("../models/Device");
+const Sensor = require("../models/Sensor");
+const Actuator = require("../models/Actuator");
 const Gateway = require("../models/Gateway");
 const CustomError = require("../utils/CustomError");
 
 const createDevice = async (deviceData) => {
-  const { type, ...data } = deviceData;
+    const { type, name, userId, gatewayId, macAddress, topics, configuration, ...specificData } = deviceData;
+    if (!["actuator", "sensor"].includes(type)) {
+      throw new CustomError("Invalid device type", 400);
+    }
 
-  if (!["actuator", "sensor"].includes(type)) {
-    throw new CustomError("Invalid device type", 400);
-  }
+    const newDevice = new Device({
+      userId,
+      name,
+      type,
+      gatewayId,
+      macAddress,
+      topics,
+      configuration
+    });
 
-  let newDevice;
+    await newDevice.save();
 
-  if (type === "actuator") {
-    newDevice = new Actuator(data);
-  } else if (type === "sensor") {
-    newDevice = new Sensor(data);
-  }
+    if (type === "actuator") {
+      const actuator = new Actuator({
+        deviceId: newDevice._id,
+        ...specificData 
+      });
+      await actuator.save();
+    } else if (type === "sensor") {
+      const sensor = new Sensor({
+        deviceId: newDevice._id,
+        ...specificData 
+      });
+      await sensor.save();
+    }
+ 
 
-  return await newDevice.save();
+  return newDevice;
 };
 
 const getAllDevices = async () => {
@@ -55,7 +75,7 @@ const deleteDevice = async (id) => {
 const getDevicesOwner = async (userId) => {
   try {
     const gateways = await Gateway.find({ userId });
-    const deviceIds = gateways.flatMap(gateway => gateway.deviceIds);
+    const deviceIds = gateways.flatMap(gateway => gateway.devices);
 
     return await Device.find({ _id: { $in: deviceIds } });
   } catch (error) {
@@ -66,9 +86,18 @@ const getDevicesOwner = async (userId) => {
 const getDevicesByAccessControl = async (userId) => {
   try {
     const accessControl = await AccessControl.findOne({ userId });
-    const deviceIds = accessControl.map(ac => ac.deviceId);
-    
-    return await Device.find({ _id: { $in: deviceIds } });
+
+    if (!accessControl) {
+      throw new CustomError("Access control not found for the user.", 403);
+    }
+
+    const deviceIds = accessControl.permissions
+      .filter(permission => permission.device)  
+      .map(permission => permission.device);    
+
+    const devices = await Device.find({ _id: { $in: deviceIds } });
+
+    return devices;
   } catch (error) {
     throw new Error(error.message);
   }

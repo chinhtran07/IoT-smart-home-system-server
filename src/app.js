@@ -5,7 +5,7 @@ const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const authMiddleware = require('./middlewares/auth.middleware');
 const swaggerUi = require('swagger-ui-express');
-const swaggerSpec = require('swagger-jsdoc');
+const swaggerSpec = require('./config/swaggerConfig');
 
 const app = express();
 
@@ -14,11 +14,9 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
-
-app.use('', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //middleware
 

@@ -1,6 +1,6 @@
 const User = require('../models/User');
 
-const registerUser = async (username, password, firstName, lastName, email) => {
+const registerUser = async (username, password, firstName, lastName, email, phone) => {
     const newUser = new User({
         username: username,
         password: password,

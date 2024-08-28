@@ -6,5 +6,11 @@ module.exports = {
     jwt: {
         secret: process.env.JWT_SECRET,
         expiresIn: '1h'
+    },
+    mqtt: {
+        port: 1883
+    },
+    wss: {
+        port:8081
     }
 }

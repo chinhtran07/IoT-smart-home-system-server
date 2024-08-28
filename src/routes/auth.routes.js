@@ -1,8 +1,19 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authControllers = require('../controllers/auth.controller');
+const authControllers = require("../controllers/auth.controller");
 
-router.post('/login', authControllers.loginUser);
-router.post('/register', authControllers.registerUser);
+/**
+ * @openapi
+ * /auth/login
+ * post:
+ *  description: login
+ *  tags:
+ *  - Auth
+ * 
+ */
+
+router.post("/login", authControllers.loginUser);
+
+router.post("/register", authControllers.registerUser);
 
 module.exports = router;

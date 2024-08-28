@@ -1,27 +1,28 @@
+const AccessControl = require('../models/AccessControl');
 const Group = require('../models/Group');
 const CustomError = require('../utils/CustomError');
 
 
-const addGroup = async (groupName, userId, deviceIds, groupType) => {
+const addGroup = async (name, userId, devices, type) => {
 
     try {
-        const newGroup = new Group({ groupName, userId, deviceIds, groupType });
+        const newGroup = new Group({ name, userId, devices, type });
         return await newGroup.save();
     } catch (error) {
         throw new Error(error.message);
     }
 };
 
-const addDeviceToGroup = async (groupId, deviceIds) => {
+const addDeviceToGroup = async (groupId, devices) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) {
             throw new CustomError('Not Found', 404);
         }
         
-        const newDeviceIds = deviceIds.filter(deviceId => group.deviceIds.includes(deviceId));
+        const newDeviceIds = devices.filter(deviceId => group.devices.includes(deviceId));
         if (newDeviceIds.length > 0) {
-            group.deviceIds.push(...newDeviceIds);
+            group.devices.push(...newDeviceIds);
             return await group.save();
         } else {
             throw new CustomError('All devices are already in the group', 400);
@@ -39,7 +40,7 @@ const removeDevicesFromGroup = async (groupId, deviceIds) => {
         }
 
         // Loại bỏ các thiết bị khỏi danh sách deviceIds
-        group.deviceIds = group.deviceIds.filter(deviceId => !deviceIds.includes(deviceId));
+        group.deviceIds = group.devices.filter(device => !devices.includes(device));
         
         return await group.save();
     } catch (error) {
@@ -80,6 +81,24 @@ const deleteGroup = async (groupId) => {
     }
 }
 
+const getGroupsByAccessControl = async (userId) => {
+    try {
+        const accessControl = await AccessControl.findOne({ userId });
+
+        if (!accessControl) {
+            throw new Error("Access control not found for the user.");
+        }
+        
+        const groupIds = accessControl.permissions.filter(permission => permission.group).map(permission => permission.group);
+
+        const groups = await Group.find({ _id: { $in: groupIds } });
+
+        return groups;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
+
 module.exports = {
     addGroup,
     addDeviceToGroup,
@@ -87,5 +106,6 @@ module.exports = {
     getGroupById,
     updateGroup,
     deleteGroup,
-    removeDevicesFromGroup
+    removeDevicesFromGroup,
+    getGroupsByAccessControl
 }
