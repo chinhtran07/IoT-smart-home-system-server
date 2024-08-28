@@ -5,7 +5,8 @@ const notificationSchema = new mongoose.Schema({
     type: { type: String, enum: ['security', 'device_error', 'status_update'], required: true },
     message: { type: String, required: true },
     read: { type: Boolean, default: false },
-    timestamp: { type: Date, default: Date.now },
+}, {
+    timestamps: true
   });
   
 const Notification = mongoose.model('Notification', notificationSchema);

@@ -2,19 +2,17 @@ const mongoose = require('mongoose');
 
 const sensorDataScheme = new mongoose.Schema({
     deviceId: {
-        type: mongoose.Schema.Types.ObjectId, ref: 'Device',
+        type: mongoose.Schema.Types.ObjectId, ref: 'Sensor',
         required: true,
     },
     value: {
         type: Number,
         required: true
-    },
-    timestamp: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timeseries: true
 });
 
-const SensorData = mongoose.Model('SensorData', sensorDataScheme);
+const SensorData = mongoose.model('SensorData', sensorDataScheme);
 
 module.exports = SensorData;

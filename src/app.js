@@ -16,13 +16,16 @@ app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
+
+app.use('', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 //middleware
 
 //routes
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/user', authMiddleware.authenticate ,require('./routes/user.routes'));
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //error handler middleware
 app.use(require('./middlewares/error.middleware'));

@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
-const deviceGroupSchema = new mongoose.Schema({
-  groupName: { type: String, required: true },
+const groupSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  type: { type: String, enum: ['room', 'category', 'custom'], default: 'custom' }, 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
-  deviceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true }], 
-  groupType: { type: String, enum: ['room', 'category', 'custom'], default: 'custom' }, 
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now }, 
+}, {
+  timestamps: true,
 });
 
-const DeviceGroup = mongoose.model('DeviceGroup', deviceGroupSchema);
+const Group = mongoose.model('Group', groupSchema);
 
-module.exports = DeviceGroup;
+module.exports = Group;

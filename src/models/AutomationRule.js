@@ -1,14 +1,17 @@
 const mongoose = require('mongoose');
 
 const automationRuleSchema = new mongoose.Schema({
-  ruleName: { type: String, required: true },
-  triggerEvent: { type: String, required: true },
-  deviceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true }], 
-  groupIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DeviceGroup' }],
-  condition: { type: Map, of: mongoose.Schema.Types.Mixed }, 
-  action: { type: Map, of: mongoose.Schema.Types.Mixed },
+  name: { type: String, required: true },
+  trigger: [{ type: String, required: true }],
+  action: {
+    deviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Device' },
+    groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
+    action: { type: String, required: true },
+    value: mongoose.Schema.Types.Mixed
+  },
   enabled: { type: Boolean, default: true },
-  timestamp: { type: Date, default: Date.now },
+}, {
+  timestamps: true
 });
 
 const AutomationRule = mongoose.model('AutomationRule', automationRuleSchema);

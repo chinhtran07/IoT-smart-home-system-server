@@ -3,10 +3,12 @@ const mongoose = require('mongoose');
 const scheduleSchema = new mongoose.Schema({
   name: { type: String, required: true }, 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
-  deviceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Device', required: true }],
-  groupIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DeviceGroup' }],
-  action: { type: String, required: true }, 
-  parameters: { type: Map, of: mongoose.Schema.Types.Mixed },
+  action: {
+    deviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Device' },
+    groupId: { type: mongoose.Schema.Types.ObjectId, ref: 'Group' },
+    action: { type: String, required: true },
+    value: { type: Map, of:mongoose.Schema.Types.Mixed }
+  },
   scheduleType: { type: String, enum: ['one-time', 'recurring'], required: true }, 
   date: { type: Date },
   recurrence: { 
@@ -16,8 +18,8 @@ const scheduleSchema = new mongoose.Schema({
   },
   enabled: { type: Boolean, default: true },
   lastExecuted: { type: Date },
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
+}, {
+  timestamps: true
 });
 
 const Schedule = mongoose.model('Schedule', scheduleSchema);
