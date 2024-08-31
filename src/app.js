@@ -22,7 +22,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 //routes
 app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/user', authMiddleware.authenticate ,require('./routes/user.routes'));
+app.use('/api/users', authMiddleware.authenticate, require('./routes/user.routes'));
+app.use('/api/devices', authMiddleware.authenticate, require('./routes/device.routes'));
+app.use('/api/gateways', authMiddleware.authenticate, require('./routes/gateway.routes'));
 
 
 //error handler middleware

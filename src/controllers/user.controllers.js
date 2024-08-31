@@ -2,7 +2,7 @@ const userServices = require('../services/user.services');
 
 const getProfile = async(req, res, next) => {
     try {
-        const user = await userServices.getProfile(req.userId);
+        const user = await userServices.getProfile(req.params.userId);
         if (!user)
             next(new CustomError('User not found', 404));
         res.json(user);
@@ -23,7 +23,7 @@ const getCurrentUser = async(req, res, next) => {
 const updateUser = async (req, res, next) => {
     try {
         const updateData = req.body;
-        const updatedUser = await userServices.updateUserProfile(req.user.id, updateData);
+        const updatedUser = await userServices.updateUserProfile(req.user._id, updateData);
         res.status(200).json(updatedUser);
     } catch(error) {
         next(error);
@@ -33,7 +33,7 @@ const updateUser = async (req, res, next) => {
 const changePassword = async (req, res, next) => {
     try {
         const { currentPassword, newPassword } = req.body;
-        await userServices.changePassword(req.user.id, currentPassword, newPassword);
+        await userServices.changePassword(req.user._id, currentPassword, newPassword);
         res.status(200);    
     } catch (error) {
         next(error);

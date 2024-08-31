@@ -3,11 +3,20 @@ require('dotenv').config();
 const config = require('./src/config');
 const connectDB = require('./src/config/db');
 
-connectDB();
 
 const app = require('./src/app');
+const { connectToGateways } = require('./src/services/mqtt.services');
+const { initSocket } = require('./src/services/websocket.services');
 
-const server = app.listen(config.port, () => {
+const server = http.createServer(app);
+
+connectDB().then(() => {
+    connectToGateways();
+    initSocket(server);
+})
+
+
+server.listen(config.port, () => {
     console.log(`Server start with http://localhost:${config.port}`);
 })
 
