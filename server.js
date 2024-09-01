@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const config = require('./src/config');
 const connectDB = require('./src/config/db');
-
+const http = require('http');
 
 const app = require('./src/app');
 const { connectToGateways } = require('./src/services/mqtt.services');

@@ -1,4 +1,5 @@
 const userServices = require('../services/user.services');
+const CustomError = require('../utils/CustomError');
 
 const getProfile = async(req, res, next) => {
     try {

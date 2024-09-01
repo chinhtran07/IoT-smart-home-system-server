@@ -41,7 +41,6 @@ const deleteDevice = async (req, res, next) => {
     }
 }
 
-con
 
 module.exports = {
     getAllDevices,

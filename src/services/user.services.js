@@ -18,7 +18,7 @@ const changePassword = async (userId, currentPassword, newPassword) => {
       throw new CustomError('User not found', 404);
     }
   
-    const isMatch = await bcrypt.comparePassword(currentPassword, user.password);
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       throw new CustomError('Current password is incorrect', 400);
     }
@@ -26,7 +26,6 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     user.password = newPassword;
   
     await user.save();
-    return { message: 'Password updated successfully' };
 };
 
 const getAllUsers = async (queryParams) => {

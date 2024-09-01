@@ -4,13 +4,14 @@ const CustomError = require('../utils/CustomError');
 const Actuator = require('../models/Actuator');
 const Sensor = require('../models/Sensor');
 
-const createGateway = async (gatewayData) => {
+const createGateway = async (gatewayData, userId) => {
     try {
-        const { name, macAddress, ipAddress, userId } = gatewayData;
+        const { name, macAddress, ipAddress, status} = gatewayData;
         const newGateway = new Gateway({
             name,
             ipAddress,
             macAddress,
+            status,
             userId
         });
 
@@ -22,14 +23,14 @@ const createGateway = async (gatewayData) => {
     }
 }
 
-const addDevice = async (deviceData, gatewayId) => {
+const addDevice = async (deviceData, gatewayId, userId) => {
     try {
         const gateway = await Gateway.findById(gatewayId);
         if (!gateway)
             throw new CustomError('Not Found', 404);
 
 
-        const { type, name, userId, macAddress, topics, configuration, ...detail } = deviceData;
+        const { type, name, macAddress, topics, configuration, detail } = deviceData;
         if (!["actuator", "sensor"].includes(type)) {
             throw new CustomError("Invalid device type", 400);
         }

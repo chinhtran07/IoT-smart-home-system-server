@@ -9,7 +9,7 @@ const deviceSchema = new mongoose.Schema({
   modelNumber: { type: String },
   macAddress: { type: String, required: true, unique: true },
   topics: {
-    pushlisher: [{ type: String }],
+    publisher: [{ type: String }],
     subscriber: [{type: String}]
   },
   statusDevice: { type: String, enum: ['online', 'offline', 'error'], default: 'offline' },

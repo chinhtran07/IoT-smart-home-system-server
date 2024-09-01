@@ -14,9 +14,8 @@ const registerUser = async (username, password, firstName, lastName, email, phon
 }
 
 const loginUser = async (username, password) => {
-    const user = await User.findOne({username});
-
-    const isMatch = await user.comparePassword(password);
+    const user = await User.findOne({ 'username': username });
+    const isMatch = user.comparePassword(password);
     if (!user || !isMatch)
         throw new CustomError('Invalid username or password', 400);
 

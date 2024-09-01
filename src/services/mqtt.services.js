@@ -16,7 +16,10 @@ const connectToGateways = async () => {
         gateways.forEach(gateway => {
             if (!mqttClients[gateway._id]) {
                 const mqttHost = `mqtt://${gateway.ipAddress}:1883`;
-                const mqttClient = mqtt.connect(mqttHost);
+                const mqttClient = mqtt.connect(mqttHost, {
+                    username: "Admin",
+                    password: "123456"
+                });
 
                 mqttClients[gateway._id] = mqttClient;
 
@@ -25,7 +28,7 @@ const connectToGateways = async () => {
 
                     Device.find({ 'gatewayId': gateway._id }).then(devices => {
                         devices.forEach(device => {
-                            device.topics.forEach(topic => {
+                            device.topics.publisher.forEach(topic => {
                                 mqttClient.subscribe(topic);
                             })
                         })

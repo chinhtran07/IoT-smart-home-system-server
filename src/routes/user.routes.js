@@ -4,11 +4,6 @@ const userControllers = require("../controllers/user.controllers");
 const { authorize } = require("../middlewares/auth.middleware");
 
 
-/**
- * @openapi
- * 
- */
-
 router.get("/profile", userControllers.getProfile);
 
 router.get("/me", userControllers.getCurrentUser);
