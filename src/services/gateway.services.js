@@ -1,6 +1,5 @@
 const Gateway = require('../models/Gateway');
 const Device = require('../models/Device');
-const CustomError = require('../utils/CustomError');
 const Actuator = require('../models/Actuator');
 const Sensor = require('../models/Sensor');
 
@@ -32,7 +31,9 @@ const addDevice = async (deviceData, gatewayId, userId) => {
 
         const { type, name, macAddress, topics, configuration, detail } = deviceData;
         if (!["actuator", "sensor"].includes(type)) {
-            throw new CustomError("Invalid device type", 400);
+            const error = new Error('Invalid device type');
+            error.status = 400;
+            throw error;
         }
 
         const newDevice = new Device({

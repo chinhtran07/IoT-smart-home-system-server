@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
-const CustomError = require('../utils/CustomError');
 const paginate = require('../utils/paginator');
 
 const getProfile = async(userId) => {
@@ -15,12 +14,16 @@ const updateUserProfile = async (userId, updateData) => {
 const changePassword = async (userId, currentPassword, newPassword) => {
     const user = await User.findById(userId);
     if (!user) {
-      throw new CustomError('User not found', 404);
+      const error = new Error('User not found');
+      error.status = 404;
+      throw error;
     }
   
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      throw new CustomError('Current password is incorrect', 400);
+      const error = new Error('Password not match');
+      error.status = 400;
+      throw error;
     }
   
     user.password = newPassword;
@@ -41,7 +44,9 @@ const getAllUsers = async (queryParams) => {
 const deleteUser = async (userId) => {
     const user = await User.findById(userId);
     if (!user) {
-      throw new CustomError('User not found', 404);
+      const error = new Error('User not found');
+      error.status = 404;
+      throw error;
     }
     await user.remove();
     return { message: 'User deleted successfully' };

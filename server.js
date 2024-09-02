@@ -3,16 +3,17 @@ require('dotenv').config();
 const config = require('./src/config');
 const connectDB = require('./src/config/db');
 const http = require('http');
-
 const app = require('./src/app');
-const { connectToGateways } = require('./src/services/mqtt.services');
-const { initSocket } = require('./src/services/websocket.services');
+const socketIo = require('socket.io');
+const { connectToGateways } = require('./src/mqtt/mqttClient');
+const { initSocket } = require('./src/socket/socketHandler');
 
 const server = http.createServer(app);
+const io = socketIo(server);
 
 connectDB().then(() => {
     connectToGateways();
-    initSocket(server);
+    initSocket(io);
 })
 
 

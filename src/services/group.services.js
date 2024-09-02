@@ -1,6 +1,5 @@
 const AccessControl = require('../models/AccessControl');
 const Group = require('../models/Group');
-const CustomError = require('../utils/CustomError');
 
 
 const addGroup = async (name, userId, devices, type) => {
@@ -17,7 +16,9 @@ const addDeviceToGroup = async (groupId, devices) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) {
-            throw new CustomError('Not Found', 404);
+            const error = new Error('Not Found');
+            error.status = 404;
+            throw error;
         }
         
         const newDeviceIds = devices.filter(deviceId => group.devices.includes(deviceId));
@@ -25,14 +26,14 @@ const addDeviceToGroup = async (groupId, devices) => {
             group.devices.push(...newDeviceIds);
             return await group.save();
         } else {
-            throw new CustomError('All devices are already in the group', 400);
+            throw new Error('All devices are already in the group');
         }
     } catch (error) {
         throw new Error(error.message);
     }
 }
 
-const removeDevicesFromGroup = async (groupId, deviceIds) => {
+const removeDevicesFromGroup = async (groupId, devices) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) {
@@ -40,7 +41,7 @@ const removeDevicesFromGroup = async (groupId, deviceIds) => {
         }
 
         // Loại bỏ các thiết bị khỏi danh sách deviceIds
-        group.deviceIds = group.devices.filter(device => !devices.includes(device));
+        const deviceIds = devices.filter(deviceId => !group.devices.includes(deviceId));
         
         return await group.save();
     } catch (error) {
