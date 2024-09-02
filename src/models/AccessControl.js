@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 
 const accessControlSchema = new mongoose.Schema(
   {
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -11,7 +16,7 @@ const accessControlSchema = new mongoose.Schema(
       {
         device: { type: mongoose.Schema.Types.ObjectId, ref: "Device" },
         group: { type: mongoose.Schema.Types.ObjectId, ref: "Group" },
-        permissionLevel: { type: String, enum: ["read", "write"] },
+        permissionLevel: { type: String, enum: ["read", "write", "all"] },
       },
     ],
   },
