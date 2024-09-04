@@ -70,8 +70,24 @@ const addDevice = async (deviceData, gatewayId, userId) => {
     }
 }
 
+const getGatewayById = async (id) => {
+    try {
+        const gateway = await Gateway.findById(id).select('-devices');
+        if (!gateway) {
+            const error = new Error('Not found');
+            error.status = 404;
+            throw error;
+        }
+
+        return gateway;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
+
 
 module.exports = {
     createGateway,
     addDevice,
+    getGatewayById
 }

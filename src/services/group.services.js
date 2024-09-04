@@ -37,7 +37,9 @@ const removeDevicesFromGroup = async (groupId, devices) => {
     try {
         const group = await Group.findById(groupId);
         if (!group) {
-            throw new CustomError('Group not found', 404);
+            const error = new Error('Not Found');
+            error.status = 404;
+            throw error;
         }
 
         // Loại bỏ các thiết bị khỏi danh sách deviceIds
@@ -60,7 +62,7 @@ const getAllGroups = async (userId) => {
 
 const getGroupById = async (groupId) => {
     try {
-        return await DeviceGroup.findById(groupId);
+        return await Group.findById(groupId);
     } catch (error) {
         throw new Error('Error fetching device group by ID: ' + error.message);
     }
@@ -68,7 +70,7 @@ const getGroupById = async (groupId) => {
 
 const updateGroup = async (groupId, updateData) => {
     try {
-        return await DeviceGroup.findByIdAndUpdate(groupId, updateData, { new: true });
+        return await Group.findByIdAndUpdate(groupId, updateData, { new: true });
     } catch (error) {
         throw new Error('Error updating device group: ' + error.message);
     }
@@ -76,7 +78,7 @@ const updateGroup = async (groupId, updateData) => {
 
 const deleteGroup = async (groupId) => {
     try {
-        return await DeviceGroup.findByIdAndDelete(groupId);
+        return await Group.findByIdAndDelete(groupId);
     } catch (error) {
         throw new Error('Error deleting device group: ' + error.message);
     }
@@ -87,7 +89,9 @@ const getGroupsByAccessControl = async (userId) => {
         const accessControl = await AccessControl.findOne({ userId });
 
         if (!accessControl) {
-            throw new Error("Access control not found for the user.");
+            const error = new Error('Not Found');
+            error.status = 404;
+            throw error;
         }
         
         const groupIds = accessControl.permissions.filter(permission => permission.group).map(permission => permission.group);

@@ -4,5 +4,6 @@ const gatewayController = require('../controllers/gateway.controller');
 
 router.post("", gatewayController.createGateway);
 router.post('/:id/devices', gatewayController.addDevice);
+router.get('/:id', gatewayController.getGatewayById);
 
 module.exports = router;

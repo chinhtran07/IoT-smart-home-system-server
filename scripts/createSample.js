@@ -1,38 +1,31 @@
-const mongoose = require("mongoose");
-require("dotenv").config(".env");
+const Flow = require('../src/utils/flow');
+const { Node, NodeTypes } = require('../src/utils/node');
 
-// Định nghĩa các models
-const User = require("../src/models/User");
+// Tạo flow mới
+const myFlow = new Flow("98asdasd87a6da8","My Flow");
 
-// Kết nối với MongoDB
-mongoose
-  .connect("mongodb://127.0.0.1:27017/smarthome")
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
+// Tạo các node sử dụng enum và cấu hình linh hoạt
+const mqttInNode = new Node(NodeTypes.MQTT_IN, "mqtt_in", "MQTT Input", 100, 100, {
+    topic: 'sensor/data',
+    qos: 1
+});
+const functionNode = new Node(NodeTypes.FUNCTION, "process_data", "Process Data", 300, 100, {
+    function: 'msg.payload = msg.payload * 2; return msg;'
+});
+const mqttOutNode = new Node(NodeTypes.MQTT_OUT, "mqtt_out", "MQTT Output", 500, 100, {
+    topic: 'sensor/processed'
+});
 
+// Thêm các node vào flow
+myFlow.addNode(mqttInNode);
+myFlow.addNode(functionNode);
+myFlow.addNode(mqttOutNode);
 
-async function seedDatabase() {
-  // const roleUser = new User({
-  //   username: "chinhtran123",
-  //   password: "123456",
-  //   firstName: "Chinh",
-  //   lastName: "Tran",
-  //   email: "test@gmail.com",
-  //   phone: "0123456789",
-  //   role: "user",
-  // });
-  // await roleUser.save();
+// Thêm kết nối giữa các node
+mqttInNode.addWire(functionNode.getId());
+functionNode.addWire(mqttOutNode.getId());
 
-  const roleAdmin = new User({
-    username: "admin",
-    password: "123456",
-    firstName: "Admin",
-    lastName: "Admin",
-    email: "admin@gmail.com",
-    phone: "0986524123",
-    role: "admin",
-  });
-  await roleAdmin.save();
-}
+// Chuyển đổi flow thành JSON
+const flowJSON = myFlow.toJSON();
 
-seedDatabase();
+console.log(JSON.stringify(flowJSON, null, 2));
