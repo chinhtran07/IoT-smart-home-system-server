@@ -13,7 +13,8 @@ const deviceSchema = new mongoose.Schema({
     subscriber: [{type: String}]
   },
   statusDevice: { type: String, enum: ['online', 'offline', 'error'], default: 'offline' },
-  configuration: { type: Map, of: mongoose.Schema.Types.Mixed }, // JSON object to store settings
+  actions: [{type: String, }],
+  configuration: { type: Map, of: mongoose.Schema.Types.Mixed },
 }, {
   timestamps: true
 });
