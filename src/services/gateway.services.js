@@ -85,9 +85,25 @@ const getGatewayById = async (id) => {
     }
 }
 
+const getGatewayByUser = async (userId) => {
+    try {
+        const gateway = await Gateway.findOne({ userId: userId });
+        if (!gateway) {
+            let error = new Error();
+            error.status = 404;
+            throw error;
+        }
+
+        return gateway;
+    } catch (error) {
+        throw new Error(error.message);
+    }
+}
+
 
 module.exports = {
     createGateway,
     addDevice,
-    getGatewayById
+    getGatewayById,
+    getGatewayByUser
 }

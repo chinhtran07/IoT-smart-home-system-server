@@ -8,6 +8,10 @@ const getAllDevices = async () => {
   return await Device.find();
 };
 
+const controlDevice = async (command) => {
+  
+}
+
 const getDeviceById = async (id) => {
   const device = await Device.findById(id);
   if (!device) {
