@@ -55,15 +55,6 @@ const connectToGateways = async () => {
 };
 
 
-myEmitter.on('fromSocket', (message) => {
-    const { gatewayId, topic, command } = message;
-
-    if (clients[gatewayId]) {
-        clients[gatewayId].publish(topic, command);
-    } else {
-        console.error(`Broker with ID ${gatewayId} not found`);
-    }
-})
 
 
 module.exports = {

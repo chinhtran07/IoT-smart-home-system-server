@@ -5,8 +5,6 @@ const initSocket = (io) => {
     io.on('connection', (socket) => {
         console.log('New client connected');
 
-        // socket.dataSentFlag = false;
-
         socket.on('subscribe', (deviceId) => {
             console.log(`Client subscribed to device ${deviceId}`);
             socket.join(deviceId);
@@ -38,10 +36,6 @@ const initSocket = (io) => {
                 console.error('Error processing data:', err);
             }
         });
-
-        // myEmitter.on('resetDataSentFlag', () => {
-        //     socket.dataSentFlag = false;
-        // });
 
     });
 }
