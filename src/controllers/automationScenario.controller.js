@@ -1,9 +1,7 @@
 const { getGatewayByUser } = require("../services/gateway.services");
 const automationScenarioService = require('../services/automationScenario.services');
-const { default: axios } = require("axios");
-const generateFlow = require('../utils/node-red/generateFlow');
-const { createFlow, updateFlow } = require("../utils/node-red/api");
-const { reverse } = require("lodash");
+const generateFlow = require('../node-red/generateFlow');
+const { createFlow, updateFlow } = require('../node-red/api');
 
 const createAutomationScenario = async (req, res, next) => {
     try {

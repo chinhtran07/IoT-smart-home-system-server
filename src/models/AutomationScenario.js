@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 
-const automationScenario = new mongoose.Schema({
-    name: { Type: String, required: true },
-    user: { Type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    triggers: [{ Type: mongoose.Schema.Types.ObjectId, ref: 'Trigger' }],
-    conditions: [{ Type: mongoose.Schema.Types.ObjectId, ref: 'Condition' }],
-    actions: [{ Type: mongoose.Schema.Types.ObjectId, ref: 'Action' }],
-    enabled: { Type: Boolean, default: true }
+const automationScenarioSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    triggers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Trigger' }],
+    conditions: [{type: mongoose.Schema.Types.ObjectId, ref: 'Condition' }],
+    actions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Action' }],
+    enabled: { type: Boolean, default: true }
 });
 
-const AutomationScenario = mongoose.model('AutomationScenario', automationScenario);
+const AutomationScenario = mongoose.model('AutomationScenario', automationScenarioSchema);
 
 module.exports = AutomationScenario;

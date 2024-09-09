@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const conditionSchema = new mongoose.Schema({
-    rule: { type: mongoose.Schema.Types.ObjectId, ref: 'AutomationScenario', required: true },
+    scenario: { type: mongoose.Schema.Types.ObjectId, ref: 'AutomationScenario', required: true },
     type: { type: String, enum: ['time', 'device', 'sensor'], required: true},
     startTime: { type: String },
     endTime: {type: String},

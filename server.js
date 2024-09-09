@@ -11,10 +11,10 @@ const { initSocket } = require('./src/socket/socketHandler');
 const server = http.createServer(app);
 const io = socketIo(server);
 
-// connectDB().then(() => {
-//     connectToGateways();
-//     initSocket(io);
-// })
+connectDB().then(() => {
+    connectToGateways();
+    initSocket(io);
+})
 
 
 server.listen(config.port, () => {

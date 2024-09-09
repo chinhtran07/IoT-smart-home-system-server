@@ -29,7 +29,7 @@ const addDevice = async (deviceData, gatewayId, userId) => {
             throw new CustomError('Not Found', 404);
 
 
-        const { type, name, macAddress, topics, configuration, detail } = deviceData;
+        const { type, name, macAddress, topics, detail, statusDevice } = deviceData;
         if (!["actuator", "sensor"].includes(type)) {
             const error = new Error('Invalid device type');
             error.status = 400;
@@ -41,17 +41,19 @@ const addDevice = async (deviceData, gatewayId, userId) => {
             name,
             type,
             gatewayId,
+            statusDevice,
             macAddress,
             topics,
-            configuration
         });
 
         await newDevice.save();
 
         if (type === "actuator") {
+            const { type, ...others } = detail;
             const actuator = new Actuator({
-                deviceId: newDevice._id,
-                ...detail
+                device: newDevice._id,
+                type: type,
+                properties: others
             });
             await actuator.save();
         } else if (type === "sensor") {

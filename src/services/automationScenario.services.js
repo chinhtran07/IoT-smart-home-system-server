@@ -12,13 +12,11 @@ const createScenario = async (data, userId) => {
         // Create Triggers
         const triggers = await Trigger.insertMany(data.triggers.map(trigger => ({
             ...trigger,
-            user: data.user
         })), { session });
 
         // Create Conditions
         const conditions = await Condition.insertMany(data.conditions.map(condition => ({
             ...condition,
-            user: data.user
         })), { session });
 
         // Create Actions
