@@ -1,36 +1,36 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { default: mongoose } = require("mongoose");
+const config = require('../config');
 
-const User = sequelize.define('user', {
-    username: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
-    },
-    password: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    firstName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    lastName: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true,
-    },
-    lastLogin: {
-        type: DataTypes.DATE,
-        allowNull: true,
-    }
-}, {
-    timestamps: true
-});
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+    firstName: {type: String, required: true },
+    lastName: {type: String, required: true},
+    email: { type: String, required: true, unique: true },
+    phone: {type: String, required: true, unique: true},
+    role: { type: String, enum: ['admin', 'user'], default: 'user' },
+  });
 
+  userSchema.pre('save', async function(next) {
+    if(!this.isModified('password')) return next();
 
-module.exports = User;
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  });
+
+  userSchema.methods.comparePassword = function(candidatePassword) {
+    return bcrypt.compare(candidatePassword, this.password);
+  }
+
+  userSchema.methods.generateAuthToken = function() {
+    const token = jwt.sign({_id: this._id, username: this.username, role: this.role}, config.jwt.secret, {expiresIn: config.jwt.expiresIn});
+    return token;
+  }
+  
+  const User = mongoose.model('User', userSchema);
+
+  module.exports = User;
+  

@@ -1,0 +1,62 @@
+const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const paginate = require("../utils/paginator");
+
+const getProfile = async (userId) => {
+  const user = await User.findById(userId).select("-password");
+  return user;
+};
+
+const updateUserProfile = async (userId, updateData) => {
+  return await User.findByIdAndUpdate(userId, updateData, { new: true });
+};
+
+const changePassword = async (userId, currentPassword, newPassword) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+
+  const isMatch = await bcrypt.compare(currentPassword, user.password);
+  if (!isMatch) {
+    const error = new Error("Password not match");
+    error.status = 400;
+    throw error;
+  }
+
+  user.password = newPassword;
+
+  await user.save();
+};
+
+const getAllUsers = async (queryParams) => {
+  const query = {};
+  const options = {
+    page: queryParams.page,
+    limit: queryParams.limit,
+  };
+
+  return await paginate(User, query, options);
+};
+
+const deleteUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    const error = new Error("User not found");
+    error.status = 404;
+    throw error;
+  }
+  await user.remove();
+  return { message: "User deleted successfully" };
+};
+
+
+module.exports = {
+  getProfile,
+  updateUserProfile,
+  changePassword,
+  getAllUsers,
+  deleteUser,
+};

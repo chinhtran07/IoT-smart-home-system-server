@@ -1,38 +1,35 @@
-require('dotenv').config();
-const express = require('express');
-const morgan = require('morgan');  
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const session = require('express-session');
-const helmet = require('helmet');
-const passport = require('passport');
-const createError = require('http-errors');
-const {check, validationResult} = require('express-validator');
-const authenticateToken = require('./middlewares/auth.middleware');
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const bodyParser = require("body-parser");
+const authMiddleware = require("./middlewares/auth.middleware");
+const swaggerUi = require("swagger-ui-express");
+const swaggerSpec = require("./config/swaggerConfig");
 
 const app = express();
 
-//Middleware
+//secure
 app.use(cors());
 app.use(helmet());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api/auth", require("./routes/auth.routes"));
 
-//Session
+//middleware
+app.use(authMiddleware.authenticate);
 
+//routes
+app.use("/api/gateways", require("./routes/gateway.routes"));
+app.use("/api/users", require("./routes/user.routes"));
+app.use("/api/devices", require("./routes/device.routes"));
+app.use("/api/access-control", require("./routes/accessControl.routes"));
+app.use("/api/schedules", require("./routes/schedule.routes"));
 
-//Routes
-app.use('/api/user' ,require('./routes/auth'));
-
-// app.get('/api/protected', authenticateToken, (req, res) => {
-//     res.json({message: 'This is a protected route', user: req.user});
-// });
-
-
-//Error handle middleware
-
-// app.use(require('./middlewares/error.middleware'));
+//error handler middleware
+app.use(require("./middlewares/error.middleware"));
 
 module.exports = app;

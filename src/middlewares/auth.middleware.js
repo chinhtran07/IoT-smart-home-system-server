@@ -1,22 +1,30 @@
-const jwt = require('jsonwebtoken');
-const config = require('../config/jwt');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const config = require("../config");
 
-const authenticateToken = async (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+const authenticate = async (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token =
+    authHeader && authHeader.startsWith("Bearer")
+      ? authHeader.split(" ")[1]
+      : null;
 
-    if (token == null) return res.sendStatus(401);
+  if (token == null) next(new CustomError("Missing token", 401));
+  try {
+    const decoded = jwt.verify(token, config.jwt.secret);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
-    jwt.verify(token, config.secret, async (err, user) => {
-        if (err) return res.sendStatus(403);
+const authorize = (roles = []) => {
+  return (req, res, next) => {
+    if (!roles.includes(req.user.role)) {
+      throw new Error("Forbidden");
+    }
+    next();
+  };
+};
 
-        const dbUser = await User.findByPk(user.id);
-        if(!dbUser) return res.sendStatus(404);
-
-        req.user = user;
-        next();
-    });
-}
-
-module.exports = authenticateToken;
+module.exports = { authenticate, authorize };
