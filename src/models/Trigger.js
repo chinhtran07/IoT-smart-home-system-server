@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const triggerSchema = new Schema({
+const triggerSchema = new mongoose.Schema({
     rule: { type: mongoose.Schema.Types.ObjectId, ref: 'AutomationRule', required: true },
     type: { type: String, enum: ['time', 'device', 'sensor'], required: true },
     startTime: { type: String },

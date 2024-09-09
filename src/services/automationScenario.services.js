@@ -58,7 +58,9 @@ const getScenarioById = async (scenarioId) => {
             .populate('actions')
 
         if (!scenario) {
-            throw new Error('Scenario not found');
+            const error = new Error("Not Found");
+            error.status = 404;
+            throw error;
         }
         return scenario;
     } catch (error) {

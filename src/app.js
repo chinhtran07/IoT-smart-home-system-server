@@ -28,6 +28,7 @@ app.use("/api/users", require("./routes/user.routes"));
 app.use("/api/devices", require("./routes/device.routes"));
 app.use("/api/access-control", require("./routes/accessControl.routes"));
 app.use("/api/schedules", require("./routes/schedule.routes"));
+app.use("/api/scenarios", require('./routes/automationScenario.routes'));
 
 //error handler middleware
 app.use(require("./middlewares/error.middleware"));
