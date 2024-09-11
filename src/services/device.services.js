@@ -1,63 +1,91 @@
-const AccessControl = require("../models/AccessControl");
-const Device = require("../models/Device");
-const Sensor = require("../models/Sensor");
-const Actuator = require("../models/Actuator");
-const Gateway = require("../models/Gateway");
+const mysqlDb = require('../models/mysql');
+const mongoDb = require('../models/mongo');
 
 const getAllDevices = async () => {
-  return await Device.find();
-};
-
-const controlDevice = async (command) => {
-  
-}
-
-const getDeviceById = async (id) => {
-  const device = await Device.findById(id);
-  if (!device) {
-    const error = new Error("Not Found");
-    error.status = 404;
+  try {
+    return await mysqlDb.Device.findAll();
+  } catch (error) {
     throw error;
   }
-  return device;
+};
+
+
+const getDeviceById = async (id) => {
+  try {
+    const device = await mysqlDb.Device.findByPk(id);
+    if (!device) {
+      const error = new Error("Device not found");
+      error.status = 404;
+      throw error;
+    }
+    return device;
+  } catch (error) {
+    throw error;
+  }
 };
 
 const updateDevice = async (id, deviceData) => {
-  const updatedDevice = await Device.findByIdAndUpdate(id, deviceData, {
-    new: true,
-  });
-  if (!updatedDevice) {
-    const error = new Error("Not Found");
-    error.status = 404;
+  try {
+    const [updated] = await mysqlDb.Device.update(deviceData, {
+      where: { id },
+      returning: true,
+    });
+    if (updated === 0) {
+      const error = new Error("Device not found");
+      error.status = 404;
+      throw error;
+    }
+    return updated;
+  } catch (error) {
     throw error;
   }
-  return updatedDevice;
 };
 
 const deleteDevice = async (id) => {
-  const deletedDevice = await Device.findByIdAndDelete(id);
-  if (!deletedDevice) {
-    const error = new Error("Not Found");
-    error.status = 404;
+  try {
+    const device = await mysqlDb.Device.findByPk(id);
+    if (!device) {
+      const error = new Error("Device not found");
+      error.status = 404;
+      throw error;
+    }
+    await device.destroy();
+    return { message: "Device deleted successfully" };
+  } catch (error) {
     throw error;
   }
-  return deletedDevice;
 };
 
-const getDevicesOwner = async (userId) => {
+const getDevicesOwner = async (userId, page = 1, limit = 10) => {
   try {
-    const gateways = await Gateway.find({ userId });
-    const deviceIds = gateways.flatMap((gateway) => gateway.devices);
+    const gateways = await Gateway.findAll({ where: { userId } });
 
-    return await Device.find({ _id: { $in: deviceIds } });
+    const gatewayIds = gateways.map(gateway => gateway.id);
+
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Device.findAndCountAll({
+      where: {
+        gatewayId: gatewayIds
+      },
+      limit: limit,
+      offset: offset,
+    });
+
+    return {
+      total: count,
+      devices: rows,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    };
   } catch (error) {
     throw new Error(error.message);
   }
 };
 
-const getDevicesByAccessControl = async (userId) => {
+const getDevicesByAccessControl = async (userId, page = 1, limit = 10) => {
   try {
-    const accessControl = await AccessControl.findOne({ userId });
+    const accessControl = await mongoDb.AccessControl.findOne({ userId });
 
     if (!accessControl) {
       const error = new Error("Access control not found for the user.");
@@ -66,12 +94,25 @@ const getDevicesByAccessControl = async (userId) => {
     }
 
     const deviceIds = accessControl.permissions
-      .filter((permission) => permission.device)
-      .map((permission) => permission.device);
+      .filter(permission => permission.device)
+      .map(permission => permission.device);
 
-    const devices = await Device.find({ _id: { $in: deviceIds } });
+    const offset = (page - 1) * limit;
 
-    return devices;
+    const { count, rows } = await mysqlDb.Device.findAndCountAll({
+      where: {
+        id: deviceIds
+      },
+      limit: limit,
+      offset: offset,
+    });
+
+    return {
+      total: count,
+      devices: rows,
+      totalPages: Math.ceil(count / limit),
+      currentPage: page
+    };
   } catch (error) {
     throw new Error(error.message);
   }

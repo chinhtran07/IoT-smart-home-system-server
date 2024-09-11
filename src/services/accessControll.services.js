@@ -1,9 +1,9 @@
 const AccessControl = require("../models/AccessControl");
 
-const createAccessControl = async (userId, permissions) => {
+const createAccessControl = async (ownerId,userId, permissions) => {
   try {
     const accessControl = new AccessControl({
-      owner: req.user._id,
+      owner: ownerId,
       userId,
       permissions,
     });
@@ -14,46 +14,41 @@ const createAccessControl = async (userId, permissions) => {
   }
 };
 
-const getAccessControlByUserId = async (userId, onwerId) => {
+const getAccessControlByUserId = async (userId, ownerId) => {
   try {
     const accessControl = await AccessControl.findOne({
       userId: userId,
-      owner: onwerId,
-    })
-      .populate("owner")
-      .populate("userId")
-      .populate("permissions.device")
-      .populate("permissions.group");
+      owner: ownerId,
+    });
 
     if (!accessControl) {
       const error = new Error("Not Found");
       error.status = 404;
       throw error;
     }
+    
     return accessControl;
   } catch (error) {
     throw new Error(error.message);
   }
 };
 
+
 const updateAccessControl = async (ownerId, userId, permissions) => {
   try {
     const updatedAccessControl = await AccessControl.findOneAndUpdate(
-      { owner: ownerId },
-      { userId },
+      { owner: ownerId, userId: userId },
       { permissions },
       { new: true, runValidators: true }
-    )
-      .populate("owner")
-      .populate("userId")
-      .populate("permissions.device")
-      .populate("permissions.group");
+    );
 
     if (!updatedAccessControl) {
       const error = new Error("Not Found");
       error.status = 404;
       throw error;
     }
+    
+    return updatedAccessControl;
   } catch (error) {
     throw new Error(error.message);
   }
@@ -61,10 +56,7 @@ const updateAccessControl = async (ownerId, userId, permissions) => {
 
 const getGrantedUsersByOwner = async (ownerId) => {
   try {
-    const accessControls = await AccessControl.find({ owner: ownerId })
-      .populate("userId", "name email")
-      .populate("permissions.device")
-      .populate("permissions.group");
+    const accessControls = await AccessControl.find({ owner: ownerId });
 
     if (!accessControls.length) {
       const error = new Error("No users found for this owner");
@@ -72,7 +64,7 @@ const getGrantedUsersByOwner = async (ownerId) => {
       throw error;
     }
 
-    const users = accessControls.map((ac) => ({
+    const users = accessControls.map(ac => ({
       user: ac.userId,
       permissions: ac.permissions,
     }));
@@ -95,10 +87,13 @@ const deleteAccessControl = async (ownerId, userId) => {
       error.status = 404;
       throw error;
     }
+
+    return deletedItem;
   } catch (error) {
     throw new Error(error.message);
   }
 };
+
 
 module.exports = {
   createAccessControl,

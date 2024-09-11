@@ -1,27 +1,32 @@
-const User = require('../models/User');
+const db = require("../models/mysql");
 
 const registerUser = async (username, password, firstName, lastName, email, phone) => {
-    const newUser = new User({
-        username: username,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-        email: email
-    });
-    await newUser.save();
+    try {
 
-    return newUser;
+        const newUser = await db.User.create({ username, password, firstName, lastName, email, phone });
+        
+        return newUser;
+       
+    } catch (error) {
+        throw error;
+   }
 }
 
 const loginUser = async (username, password) => {
-    const user = await User.findOne({ 'username': username });
-    const isMatch = user.comparePassword(password);
-    if (!user || !isMatch)
-        throw new CustomError('Invalid username or password', 400);
-
-    const token = user.generateAuthToken();
-
-    return token;
-}
+    try {
+      const user = await db.User.findOne({ where: { username } });
+      if (!user) throw new Error('Invalid username or password');
+  
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) throw new Error('Invalid username or password');
+  
+      const token = user.generateAuthToken();
+  
+      return token;
+    } catch (error) {
+      throw new Error(`Error logging in user: ${error.message}`);
+    }
+  };
+  
 
 module.exports = {registerUser, loginUser};

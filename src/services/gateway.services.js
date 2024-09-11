@@ -1,12 +1,11 @@
-const Gateway = require('../models/Gateway');
-const Device = require('../models/Device');
-const Actuator = require('../models/Actuator');
-const Sensor = require('../models/Sensor');
+const mysqlDB = require('../models/mysql');
+const mongoDb = require('../models/mongo');
 
 const createGateway = async (gatewayData, userId) => {
     try {
-        const { name, macAddress, ipAddress, status} = gatewayData;
-        const newGateway = new Gateway({
+        const { name, macAddress, ipAddress, status } = gatewayData;
+
+        const newGateway = await mysqlDB.Gateway.create({
             name,
             ipAddress,
             macAddress,
@@ -14,58 +13,57 @@ const createGateway = async (gatewayData, userId) => {
             userId
         });
 
-        await newGateway.save();
-
         return newGateway;
     } catch (error) {
         throw new Error(error.message);
     }
-}
+};
 
 const addDevice = async (deviceData, gatewayId, userId) => {
     try {
-        const gateway = await Gateway.findById(gatewayId);
-        if (!gateway)
-            throw new CustomError('Not Found', 404);
-
-
-        const { type, name, macAddress, topics, detail, statusDevice } = deviceData;
-        if (!["actuator", "sensor"].includes(type)) {
-            const error = new Error('Invalid device type');
-            error.status = 400;
-            throw error;
+        const gateway = await mysqlDB.Gateway.findByPk(gatewayId);
+        if (!gateway) {
+            throw new Error('Gateway not found');
         }
 
-        const newDevice = new Device({
+        const { type, name, macAddress, topics, detail, status } = deviceData;
+        if (!["actuator", "sensor"].includes(type)) {
+            throw new Error('Invalid device type');
+        }
+
+        const existingDevice = await mysqlDB.Device.findOne({ where: { macAddress } });
+        if (existingDevice) {
+            throw new Error('Device with this MAC address already exists');
+        }
+
+        const newDevice = await mysqlDB.Device.create({
             userId,
             name,
             type,
             gatewayId,
-            statusDevice,
+            status,
             macAddress,
-            topics,
         });
-
-        await newDevice.save();
 
         if (type === "actuator") {
             const { type, ...others } = detail;
-            const actuator = new Actuator({
-                device: newDevice._id,
-                type: type,
+            await Actuator.create({
+                type,
                 properties: others
             });
-            await actuator.save();
         } else if (type === "sensor") {
-            const sensor = new Sensor({
-                deviceId: newDevice._id,
+            await Sensor.create({
                 ...detail
             });
-            await sensor.save();
         }
 
-        gateway.devices.push(newDevice._id);
-        
+        const topic = new mongoDb.Topic({
+            deviceId: newDevice.id,
+            topics: topics
+        })
+
+        await topic.save();
+
         return newDevice;
     } catch (error) {
         throw new Error(error.message);
