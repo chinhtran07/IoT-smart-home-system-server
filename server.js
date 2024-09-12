@@ -4,10 +4,10 @@ const config = require("./src/config");
 const http = require("http");
 const app = require("./src/app");
 const socketIo = require("socket.io");
-const { connectToGateways } = require("./src/mqtt/mqttClient");
 const { initSocket } = require("./src/socket/socketHandler");
 const connectDB = require("./src/config/mongdb.config");
 const mysqldb = require("./src/models/mysql");
+const { connectToGateways } = require("./src/mqtt");
 
 const server = http.createServer(app);
 const io = socketIo(server);
