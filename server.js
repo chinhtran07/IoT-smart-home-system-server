@@ -21,10 +21,10 @@ mysqldb.sequelize
     initSocket(io);
   })
   .catch((error) => {
-    console.error("Unable to connect to the database:", err);
+    console.error("Unable to connect to the database:", error);
   });
 
-sequelize.sync({ force: false }).then(() => {
+mysqldb.sequelize.sync({ force: false }).then(() => {
   console.log("Database synchronized");
 });
 

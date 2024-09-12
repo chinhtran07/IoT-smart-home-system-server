@@ -1,6 +1,15 @@
 
 module.exports = (sequelize, DataTypes) => {
     const DeviceCondition = sequelize.define('DeviceCondition', {
+        id: {
+            type: DataTypes.UUID,
+            references: {
+                model: 'conditions',
+                key: 'id'
+            },
+            primaryKey: true,
+            allowNull: false,
+        },
         deviceId: {
             type: DataTypes.UUID,
             references: {
@@ -18,13 +27,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         }
     }, {
-        tableName: 'conditions',
+        tableName: 'device_conditions',
         timestamps: true
     });
 
     DeviceCondition.associate = function (db) {
 
-        DeviceCondition.belongsTo(db.Condition, { foreignKey: 'id', constraints: false });
+        DeviceCondition.belongsTo(db.Condition, { foreignKey: 'id'});
         db.Device.hasMany(DeviceCondition, { foreignKey: 'deviceId', onDelete: 'CASCADE' });
         DeviceCondition.belongsTo(db.Device, { foreignKey: 'deviceId' });
     }

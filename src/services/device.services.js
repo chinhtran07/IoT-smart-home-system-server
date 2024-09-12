@@ -58,7 +58,7 @@ const deleteDevice = async (id) => {
 
 const getDevicesOwner = async (userId, page = 1, limit = 10) => {
   try {
-    const gateways = await Gateway.findAll({ where: { userId } });
+    const gateways = await mysqlDb.Gateway.findAll({ where: { userId } });
 
     const gatewayIds = gateways.map(gateway => gateway.id);
 

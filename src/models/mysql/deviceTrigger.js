@@ -1,6 +1,14 @@
 
 module.exports = (sequelize, DataTypes) => {
     const DeviceTrigger = sequelize.define('DeviceTrigger', {
+        id: {
+            type: DataTypes.UUID,
+            references: {
+                model: 'triggers',
+                key: 'id'
+            },
+            primaryKey: true
+        },
         deviceId: {
             type: DataTypes.UUID,
             references: {
@@ -18,12 +26,12 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         }
     }, {
-        tableName: 'triggers',
+        tableName: 'device_triggers',
         timestamps: true
     });
 
     DeviceTrigger.associate = function (db) {
-        DeviceTrigger.belongsTo(db.Trigger, { foreignKey: 'id', constraints: false });
+        DeviceTrigger.belongsTo(db.Trigger, { foreignKey: 'id'});
         db.Device.hasMany(DeviceTrigger, { foreignKey: 'deviceId', onDelete: 'CASCADE' });
         DeviceTrigger.belongsTo(db.Device, { foreignKey: 'deviceId' });
     }

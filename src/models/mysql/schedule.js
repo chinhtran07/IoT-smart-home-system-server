@@ -35,12 +35,12 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: true,
         }
     }, {
+        tableName: "schedules",
         timestamps: true,
     });
 
 
     Schedule.associate = function (db) {
-
         db.User.hasMany(Schedule, { foreignKey: 'userId', onDelete: 'CASCADE' });
         Schedule.belongsTo(db.User, { foreignKey: 'userId' });
     }

@@ -1,8 +1,8 @@
-const AccessControl = require("../models/AccessControl");
+const mongoDb = require('../models/mongo');
 
 const createAccessControl = async (ownerId,userId, permissions) => {
   try {
-    const accessControl = new AccessControl({
+    const accessControl = new mongoDb.AccessControl({
       owner: ownerId,
       userId,
       permissions,
@@ -16,7 +16,7 @@ const createAccessControl = async (ownerId,userId, permissions) => {
 
 const getAccessControlByUserId = async (userId, ownerId) => {
   try {
-    const accessControl = await AccessControl.findOne({
+    const accessControl = await mongoDb.AccessControl.findOne({
       userId: userId,
       owner: ownerId,
     });
@@ -36,7 +36,7 @@ const getAccessControlByUserId = async (userId, ownerId) => {
 
 const updateAccessControl = async (ownerId, userId, permissions) => {
   try {
-    const updatedAccessControl = await AccessControl.findOneAndUpdate(
+    const updatedAccessControl = await mongoDb.AccessControl.findOneAndUpdate(
       { owner: ownerId, userId: userId },
       { permissions },
       { new: true, runValidators: true }
@@ -56,7 +56,7 @@ const updateAccessControl = async (ownerId, userId, permissions) => {
 
 const getGrantedUsersByOwner = async (ownerId) => {
   try {
-    const accessControls = await AccessControl.find({ owner: ownerId });
+    const accessControls = await mongoDb.AccessControl.find({ owner: ownerId });
 
     if (!accessControls.length) {
       const error = new Error("No users found for this owner");
@@ -77,7 +77,7 @@ const getGrantedUsersByOwner = async (ownerId) => {
 
 const deleteAccessControl = async (ownerId, userId) => {
   try {
-    const deletedItem = await AccessControl.findOneAndDelete({
+    const deletedItem = await mongoDb.AccessControl.findOneAndDelete({
       owner: ownerId,
       userId: userId,
     });

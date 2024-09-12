@@ -1,6 +1,15 @@
 
 module.exports = (sequelize, DataTypes) => {
     const TimeCondition = sequelize.define('TimeCondition', {
+        id: {
+            type: DataTypes.UUID,
+            references: {
+                model: 'conditions',
+                key: 'id'
+            },
+            primaryKey: true,
+            allowNull: false,
+        },
         startTime: {
             type: DataTypes.STRING,
             allowNull: true
@@ -10,13 +19,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true
         }
     }, {
-        tableName: 'conditions',
+        tableName: 'time_conditions',
         timestamps: true
     });
 
     TimeCondition.associate = function (db) {
 
-        TimeCondition.belongsTo(db.Condition, { foreignKey: 'id', constraints: false });
+        TimeCondition.belongsTo(db.Condition, { foreignKey: 'id' });
     }
     return TimeCondition;
 }

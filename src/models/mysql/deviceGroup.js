@@ -17,6 +17,9 @@ module.exports = (sequelize, DataTypes) => {
             },
             primaryKey: true
         }
+    }, {
+        tableName: "device_groups",
+        timestamps: true,
     });
 
     DeviceGroup.associate = function (db) {

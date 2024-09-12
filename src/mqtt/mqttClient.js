@@ -1,81 +1,101 @@
 const mqtt = require('mqtt');
 const myEmitter = require('../events/eventsEmitter');
-const Gateway = require('../models/Gateway');
-const Device = require('../models/Device');
+const mysqlDb = require('../models/mysql');
+const mongoDb = require('../models/mongo');
 
 const clients = {};
 
-// Kết nối tới tất cả các gateway
-const connectToGateways = async () => {
+const connectToGateways = async (gatewayIds = []) => {
     try {
-        const gateways = await Gateway.find().exec();
-        gateways.forEach(gateway => {
-            if (!clients[gateway._id]) {
+        const gateways = gatewayIds.length > 0
+            ? await mysqlDb.Gateway.findAll({ where: { id: gatewayIds } })
+            : await mysqlDb.Gateway.findAll();
+        
+        for (const gateway of gateways) {
+            if (!clients[gateway.id]) {
                 const mqttHost = `mqtt://${gateway.ipAddress}:1883`;
                 const client = mqtt.connect(mqttHost, {
                     username: "Admin",
                     password: "123456",
                 });
 
-                clients[gateway._id] = client;
+                clients[gateway.id] = client;
 
-                client.on('connect', () => {
+                client.on('connect', async () => {
                     console.log(`Connected to MQTT broker at ${mqttHost}`);
 
-                    // Tìm tất cả thiết bị theo gateway và đăng ký chủ đề
-                    Device.find({ gatewayId: gateway._id }).then(devices => {
-                        devices.forEach(device => {
-                            device.topics.publisher.forEach(topic => {
+                    const devices = await mysqlDb.Device.findAll({ where: { gatewayId: gateway.id } });
+                    for (const device of devices) {
+                        const topicDoc = await mongoDb.Topic.findOne({ deviceId: device.id }).exec();
+                        if (topicDoc) {
+                            topicDoc.topics.publisher.forEach(topic => {
                                 client.subscribe(topic, (err) => {
                                     if (err) {
                                         console.error(`Failed to subscribe to topic: ${topic}`);
                                     }
                                 });
                             });
-                        });
-                    }).catch(err => console.error('Error fetching devices', err));
+                        } else {
+                            console.error(`No topics found for device ${device.id}`);
+                        }
+                    }
                 });
 
-                // Xử lý tin nhắn nhận từ MQTT
                 client.on('message', async (topic, message) => {
                     console.log(`Received message on topic ${topic}: ${message.toString()}`);
 
                     try {
-                        const device = await Device.findOne({ 'topics.publisher': topic });
-                        if (device) {
-                            const data = JSON.parse(message.toString());
-                            myEmitter.emit('dataReceived', { device, data });
+                        const topicDoc = await mongoDb.Topic.findOne({ 'topics.publisher': topic }).exec();
+                        if (topicDoc) {
+                            const device = await mysqlDb.Device.findByPk(topicDoc.deviceId);
+                            if (device) {
+                                const data = JSON.parse(message.toString());
+                                myEmitter.emit('dataReceived', { device, data });
+                            } else {
+                                console.error(`Device for topic ${topic} not found`);
+                            }
                         } else {
-                            console.error(`Device for topic ${topic} not found`);
+                            console.error(`Topic document for topic ${topic} not found`);
                         }
                     } catch (error) {
                         console.error('Error processing MQTT message:', error.message);
                     }
                 });
 
-                // Xử lý sự kiện lỗi MQTT
                 client.on('error', (err) => {
                     console.error('MQTT Error:', err);
                 });
 
-                // Xử lý sự kiện mất kết nối MQTT
                 client.on('close', () => {
                     console.warn(`MQTT client disconnected from ${mqttHost}`);
-                    // Hủy đăng ký tất cả các chủ đề của client này nếu mất kết nối
                     client.end(true);
                 });
             }
-        });
+        }
     } catch (err) {
         console.error('Error connecting to gateways:', err);
     }
 };
 
-myEmitter.on('control', (gatewayId, topic, payload) => {
+const onGatewayCreated = async (gateway) => {
+    if (!clients[gateway.id]) {
+        await connectToGateways([gateway.id]);
+    }
+};
+
+
+const onDeviceCreated = async (device) => {
+    const gateway = await mysqlDb.Gateway.findByPk(device.gatewayId);
+    if (gateway && !clients[gateway.id]) {
+        await connectToGateways([gateway.id]);
+    }
+};
+
+myEmitter.on('control', async ({ gatewayId, topic, payload }) => {
     const client = clients[gatewayId];
     if (client) {
         try {
-            client.publish(topic, payload, (err) => {
+            client.publish(topic, JSON.stringify(payload), (err) => {
                 if (err) {
                     console.error(`Failed to publish to topic ${topic}`, err);
                 } else {
@@ -92,5 +112,7 @@ myEmitter.on('control', (gatewayId, topic, payload) => {
 
 module.exports = {
     connectToGateways,
+    onGatewayCreated,
+    onDeviceCreated,
     clients,
 };

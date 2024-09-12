@@ -1,10 +1,21 @@
-
 module.exports = (sequelize, DataTypes) => {
     const Actuator = sequelize.define('Actuator', {
-        type: { type: DataTypes.STRING, allowNull: false },
+        id: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: 'devices',
+                key: 'id',
+            },
+            primaryKey: true,
+        },
+        type: {
+            type: DataTypes.STRING,
+            allowNull: false
+        },
         action: {
             type: DataTypes.ENUM('modify', 'control'),
-            default: 'control',
+            defaultValue: 'control',
             allowNull: false
         },
         properties: {
@@ -12,12 +23,13 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false
         }
     }, {
+        tableName: "actuators",
         timestamps: true,
     });
 
     Actuator.associate = function (db) {
-        Actuator.belongsTo(db.Device, { foreignKey: 'id', constraints: false });
-    }
+        Actuator.belongsTo(db.Device, { foreignKey: 'id', onDelete: 'CASCADE' });
+    };
 
     return Actuator;
-}
+};

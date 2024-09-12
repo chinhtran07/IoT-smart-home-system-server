@@ -44,6 +44,7 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
+      tableName: "users",
       timestamps: true,
       hooks: {
         beforeSave: async (user) => {

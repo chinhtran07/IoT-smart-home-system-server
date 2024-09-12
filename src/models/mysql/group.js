@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         }
     }, {
+        tableName: "groups",
         timestamps: true
     });
     Group.associate = function (db) {

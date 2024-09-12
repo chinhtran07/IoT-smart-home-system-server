@@ -32,6 +32,7 @@ module.exports = (sequelize, DataTypes) => {
             }
         }
     }, {
+        tableName: "gateways",
         timestamps: true
     });
     Gateway.associate = function (db) {
@@ -39,5 +40,11 @@ module.exports = (sequelize, DataTypes) => {
         db.User.hasMany(Gateway, { foreignKey: 'userId', onDelete: 'CASCADE' });
         Gateway.belongsTo(db.User, { foreignKey: 'userId' });
     }
+
+    Gateway.afterCreate(async (gateway, options) => {
+        const mqttService = require('../../mqtt/mqttClient');
+        await mqttService.onGatewayCreated(gateway);
+    });
+    
     return Gateway;
 }

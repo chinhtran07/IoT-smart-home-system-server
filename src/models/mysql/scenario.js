@@ -22,6 +22,7 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: true
         }
     }, {
+        tableName:"scenarios",
         timestamps: true,
     });
     Scenario.associate = function (db) {

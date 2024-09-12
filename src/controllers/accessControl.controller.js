@@ -1,16 +1,17 @@
 const accessControlService = require("../services/accessControll.services");
-const User = require("../models/User");
+const mysqlDb = require('../models/mysql');
 
 const grantPermission = async (req, res, next) => {
   try {
     const { userId, permissions } = req.body;
-    const user = await User.findById(userId);
+    const user = await mysqlDb.User.findByPk(userId);
     if (!user) {
       const error = new Error("User not found");
       error.status = 404;
       next(error);
     }
     const result = await accessControlService.createAccessControl(
+      req.user.id,
       userId,
       permissions
     );
@@ -23,7 +24,7 @@ const grantPermission = async (req, res, next) => {
 const getAccessControl = async (req, res, next) => {
   try {
     const userId = req.params.userId;
-    const user = await User.findById(userId);
+    const user = await mysqlDb.User.findByPk(userId);
     if (!user) {
       const error = new Error("User not found");
       error.status = 404;
@@ -31,7 +32,7 @@ const getAccessControl = async (req, res, next) => {
     }
     const accessControl = await accessControlService.getAccessControlByUserId(
       userId,
-      req.user._id
+      req.user.id
     );
     res.status(200).json(accessControl);
   } catch (error) {
@@ -41,16 +42,16 @@ const getAccessControl = async (req, res, next) => {
 
 const updateAccessControl = async (req, res, next) => {
   try {
-    const userId = req.params.id || req.body.userId;
+    const userId = req.body.userId;
     const { permissions } = req.body;
-    const user = await User.findById(userId);
+    const user = await mysqlDb.User.findByPk(userId);
     if (!user) {
       const error = new Error("User not found");
       error.status = 404;
       next(error);
     }
     await accessControlService.updateAccessControl(
-      req.user._id,
+      req.user.id,
       userId,
       permissions
     );
@@ -64,7 +65,7 @@ const updateAccessControl = async (req, res, next) => {
 const getGrantedUsersByOwner = async (req, res, next) => {
   try {
     const users = await accessControlService.getGrantedUsersByOwner(
-      req.user._id
+      req.user.id
     );
     res.json(users);
   } catch (error) {
@@ -75,7 +76,7 @@ const getGrantedUsersByOwner = async (req, res, next) => {
 const deleteAccessControl = async (req, res, next) => {
   try {
     const userId = req.params.userId;
-    await accessControlService.deleteAccessControl(req.user._id, userId);
+    await accessControlService.deleteAccessControl(req.user.id, userId);
     res.status(204);
   } catch (error) {
     next(error);

@@ -38,7 +38,14 @@ module.exports = (sequelize, DataTypes) => {
             }
         }
     }, {
-        timestamps: true
+        tableName: "devices",
+        timestamps: true,
+        hooks: {
+            afterCreate: async (device) => {
+                const mqttService = require('../../mqtt/mqttClient');
+                await mqttService.onDeviceCreated(device);
+            }
+        }
     });
 
     Device.associate = function (db) {

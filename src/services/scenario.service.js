@@ -1,65 +1,67 @@
-const { default: mongoose } = require("mongoose");
-const Trigger = require("../models/Trigger");
-const Condition = require("../models/Condition");
-const Action = require("../models/Action");
-const AutomationScenario = require("../models/AutomationScenario");
+const mysqlDb = require('../models/mysql');
 
 const createScenario = async (data, userId) => {
-    const session = await mongoose.startSession(); // For transaction
-    session.startTransaction();
+    const transaction = await mysqlDb.sequelize.transaction();
 
     try {
+        // Create Scenario
+        const scenario = await mysqlDb.Scenario.create({
+            name: data.name,
+            userId: userId,
+            isEnabled: data.isEnabled
+        }, { transaction });
+
         // Create Triggers
-        const triggers = await Trigger.insertMany(data.triggers.map(trigger => ({
-            ...trigger,
-        })), { session });
+        const triggers = await mysqlDb.Trigger.bulkCreate(
+            data.triggers.map(trigger => ({
+                ...trigger,
+                scenarioId: scenario.id,  // Associate with Scenario
+            })),
+            { transaction }
+        );
 
         // Create Conditions
-        const conditions = await Condition.insertMany(data.conditions.map(condition => ({
-            ...condition,
-        })), { session });
+        const conditions = await mysqlDb.Condition.bulkCreate(
+            data.conditions.map(condition => ({
+                ...condition,
+                scenarioId: scenario.id,  // Associate with Scenario
+            })),
+            { transaction }
+        );
 
         // Create Actions
-        const actions = await Action.insertMany(data.actions.map(action => ({
-            ...action,
-        })), { session });
+        const actions = await mysqlDb.Action.bulkCreate(
+            data.actions.map(action => ({
+                ...action,
+                scenarioId: scenario.id,  // Associate with Scenario
+            })),
+            { transaction }
+        );
 
-        // Create Automation Scenario
-        const scenario = new AutomationScenario({
-            name: data.name,
-            user: userId,
-            triggers: triggers.map(trigger => trigger._id),
-            conditions: conditions.map(condition => condition._id),
-            actions: actions.map(action => action._id),
-            enabled: data.enabled
-        });
-
-        await scenario.save({ session });
-
-        await session.commitTransaction();
-        session.endSession();
-
-        return scenario;
+        await transaction.commit(); // Commit transaction
+        return {scenario, triggers, conditions, actions};
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
+        await transaction.rollback(); // Rollback transaction in case of error
         throw new Error(error.message);
     }
 };
 
-
 const getScenarioById = async (scenarioId) => {
     try {
-        const scenario = await AutomationScenario.findById(scenarioId)
-            .populate('triggers')
-            .populate('conditions')
-            .populate('actions')
+        const scenario = await mysqlDb.Scenario.findByPk(scenarioId, {
+            include: [
+                { model: Trigger, include: [DeviceTrigger, TimeTrigger] },
+                { model: Condition, include: [DeviceCondition, TimeCondition] },
+                { model: Action }
+            ]  // Populate associated data
+        });
 
         if (!scenario) {
-            const error = new Error("Not Found");
+            const error = new Error("Scenario not found");
             error.status = 404;
             throw error;
         }
+
         return scenario;
     } catch (error) {
         throw new Error(error.message);
@@ -68,86 +70,91 @@ const getScenarioById = async (scenarioId) => {
 
 const getScenariosByUser = async (userId) => {
     try {
-        const scenarios = await AutomationScenario.find({ user: userId }).select("_id name enabled");
+        const scenarios = await mysqlDb.Scenario.findAll({
+            where: { userId },
+            attributes: ["id", "name", "isEnabled"],
+        });
+
         return scenarios;
     } catch (error) {
         throw new Error(error.message);
     }
-}
+};
 
 const updateScenario = async (scenarioId, data) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    const transaction = await mysqlDb.Scenario.sequelize.transaction();
 
     try {
-        // Update Triggers
-        await Trigger.deleteMany({ _id: { $in: data.oldTriggers } }, { session });
-        const newTriggers = await Trigger.insertMany(data.triggers.map(trigger => ({
-            ...trigger,
-        })), { session });
+        const scenario = await mysqlDb.Scenario.findByPk(scenarioId, { transaction });
 
-        // Update Conditions
-        await Condition.deleteMany({ _id: { $in: data.oldConditions } }, { session });
-        const newConditions = await Condition.insertMany(data.conditions.map(condition => ({
-            ...condition,
-        })), { session });
+        if (!scenario) {
+            throw new Error("Scenario not found");
+        }
 
-        // Update Actions
-        await Action.deleteMany({ _id: { $in: data.oldActions } }, { session });
-        const newActions = await Action.insertMany(data.actions.map(action => ({
-            ...action,
-        })), { session });
+        await mysqlDb.Trigger.destroy({ where: { scenarioId: scenarioId }, transaction });
+        await mysqlDb.Condition.destroy({ where: { scenarioId: scenarioId }, transaction });
+        await mysqlDb.Action.destroy({ where: { scenarioId: scenarioId }, transaction });
 
-        // Update Automation Scenario
-        const updatedScenario = await AutomationScenario.findByIdAndUpdate(
-            scenarioId,
-            {
-                name: data.name,
-                triggers: newTriggers.map(trigger => trigger._id),
-                conditions: newConditions.map(condition => condition._id),
-                actions: newActions.map(action => action._id),
-                enabled: data.enabled
-            },
-            { new: true, session }
+        const newTriggers = await mysqlDb.Trigger.bulkCreate(
+            data.triggers.map(trigger => ({
+                ...trigger,
+                scenarioId: scenario.id
+            })),
+            { transaction }
+        );
+        const newConditions = await mysqlDb.Condition.bulkCreate(
+            data.conditions.map(condition => ({
+                ...condition,
+                scenarioId: scenario.id
+            })),
+            { transaction }
+        );
+        const newActions = await mysqlDb.Action.bulkCreate(
+            data.actions.map(action => ({
+                ...action,
+                scenarioId: scenario.id
+            })),
+            { transaction }
         );
 
-        await session.commitTransaction();
-        session.endSession();
+        const updatedScenario = await scenario.update(
+            {
+                name: data.name,
+                isEnabled: data.isEnabled
+            },
+            { transaction }
+        );
 
+        await transaction.commit(); 
         return updatedScenario;
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
+        await transaction.rollback(); 
         throw new Error(error.message);
     }
 };
 
 const deleteScenario = async (scenarioId) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
+    const transaction = await mysqlDb.Scenario.sequelize.transaction();
 
     try {
-        const scenario = await AutomationScenario.findById(scenarioId);
+        const scenario = await mysqlDb.Scenario.findByPk(scenarioId, { transaction });
 
         if (!scenario) {
-            throw new Error('Scenario not found');
+            throw new Error("Scenario not found");
         }
 
-        // Delete associated Triggers, Conditions, Actions
-        await Trigger.deleteMany({ _id: { $in: scenario.triggers } }, { session });
-        await Condition.deleteMany({ _id: { $in: scenario.conditions } }, { session });
-        await Action.deleteMany({ _id: { $in: scenario.actions } }, { session });
+        // Delete associated Triggers, Conditions, and Actions
+        await mysqlDb.Trigger.destroy({ where: { scenarioId }, transaction });
+        await mysqlDb.Condition.destroy({ where: { scenarioId }, transaction });
+        await mysqlDb.Action.destroy({ where: { scenarioId }, transaction });
 
-        // Delete Automation Scenario
-        await AutomationScenario.findByIdAndDelete(scenarioId, { session });
+        // Delete Scenario
+        await scenario.destroy({ transaction });
 
-        await session.commitTransaction();
-        session.endSession();
-
-        return { message: 'Scenario deleted successfully' };
+        await transaction.commit(); // Commit transaction
+        return { message: "Scenario deleted successfully" };
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
+        await transaction.rollback(); // Rollback transaction in case of error
         throw new Error(error.message);
     }
 };
@@ -158,4 +165,4 @@ module.exports = {
     getScenariosByUser,
     updateScenario,
     deleteScenario
-}
+};

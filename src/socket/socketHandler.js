@@ -1,5 +1,5 @@
 const myEmitter = require('../events/eventsEmitter');
-const SensorData = require('../models/SensorData');
+const mongoDB = require('../models/mongo');
 
 const initSocket = (io) => {
     io.on('connection', (socket) => {
@@ -25,7 +25,7 @@ const initSocket = (io) => {
 
             try {
                 if (device.type == "sensor") {
-                    const sensorData = new SensorData({ ...data, deviceId: device._id });
+                    const sensorData = new mongoDB.SensorData({ ...data, deviceId: device.id });
                     await sensorData.save();
                 } else {
                     // handle for actuator type 

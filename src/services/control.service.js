@@ -1,51 +1,58 @@
-const Actuator = require('../models/Actuator');
 const myEmitter = require('../events/eventsEmitter');
+const mysqlDb = require('../models/mysql');
+const mongoDb = require('../models/mongo');
 
-const controlDevice = async (deviceId, command={}) => {
+const controlDevice = async (deviceId, command = {}) => {
     try {
-        const actuator = await Actuator.findOne({ device: deviceId }).populate('device');
+        const actuator = await mysqlDb.Actuator.findOne({
+            include: [{
+                model: mysqlDb.Device,
+                where: { id: deviceId }
+            }]
+        });
+
         if (!actuator) {
             const error = new Error("Not Found");
             error.status = 404;
             throw error;
         }
 
-        
+        const properties = actuator.properties || {};
         const invalidKeys = Object.keys(command).filter(key => !(key in properties));
 
         if (invalidKeys.length > 0) {
             const error = new Error(`Invalid command keys: ${invalidKeys.join(', ')}`);
-            error.status = 400; // Bad Request
+            error.status = 400; 
             throw error;
         }
-
 
         const payload = {
             action: actuator.action,
             ...command
-        }
-        
-        const gatewayId = await actuator.device.gatewayId;
-        const topic = await actuator.device.topics.subscriber[0];
+        };
+
+        const gatewayId = actuator.Device.gatewayId;
+        const subscriberTopic = await mongoDb.Topic.findOne({ deviceId: deviceId });
 
         console.log(payload);
 
-        myEmitter.emit('control', { gatewayId, topic, payload });
+        // Emit control event to the gateway via MQTT
+        myEmitter.emit('control', { gatewayId, subscriberTopic, payload });
 
-        const updatedProperties = { ...properties, ...command }; // Gộp properties cũ và command mới
+        // Update actuator properties with the new command
+        const updatedProperties = { ...properties, ...command };
 
-        const updatedActuator = await Actuator.findOneAndUpdate(
-            { device: deviceId },
-            { properties: updatedProperties },  // Cập nhật các thuộc tính mới
-            { new: true }  // Trả về tài liệu đã cập nhật
+        const updatedActuator = await mysqlDb.Actuator.update(
+            { properties: updatedProperties }, 
+            { where: { id: actuator.id }, returning: true }  
         );
 
-
+        return updatedActuator;
     } catch (error) {
         throw error;
     }
-}
+};
 
 module.exports = {
     controlDevice
-}
+};

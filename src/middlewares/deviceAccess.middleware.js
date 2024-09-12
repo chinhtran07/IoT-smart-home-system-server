@@ -1,21 +1,26 @@
-const AccessControl = require('../models/AccessControl');
+const { where } = require('sequelize');
+const mongoDb = require('../models/mongo');
+const mysqlDb = require('../models/mysql');
 
 const checkDeviceAccess = async (req, res, next) => {
     try {
         const { deviceId } = req.body;
 
-        const device = await findOne({ userId: req.user._id });
+        const device = await mysqlDb.Device.findByPk(deviceId);
 
-        if (device)
-            next();
+        if (!device) {
+            return res.status(404).json({ message: 'Device not found' });
+        }
 
-        const access = await AccessControl.findOne({
+        const access = await mongoDb.AccessControl.findOne({
             userId: req.user._id,
-            deviceId: deviceId
+            'permissions.device': deviceId
         });
 
-        if (!access) return res.sendStatus(403);
-        req.access = access;
+        if (!access) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
         next();
     } catch (err) {
         next(err);
