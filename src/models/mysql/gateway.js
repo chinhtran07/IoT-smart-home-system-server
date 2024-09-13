@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     Gateway.afterCreate(async (gateway, options) => {
-        const mqttService = require('../../mqtt/mqttClient');
+        const mqttService = require('../../mqtt/mqttManager');
         await mqttService.onGatewayCreated(gateway);
     });
     

@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true,
         hooks: {
             afterCreate: async (device) => {
-                const mqttService = require('../../mqtt/mqttClient');
+                const mqttService = require('../../mqtt/mqttManager');
                 await mqttService.onDeviceCreated(device);
             }
         }

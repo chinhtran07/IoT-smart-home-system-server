@@ -14,7 +14,7 @@ const registerUser = async (username, password, firstName, lastName, email, phon
 
 const loginUser = async (username, password) => {
     try {
-      const user = await db.User.findOne({ where: { username } });
+      const user = await db.User.findOne({ where: { username }});
       if (!user) throw new Error('Invalid username or password');
   
       const isMatch = await user.comparePassword(password);

@@ -20,8 +20,9 @@ const createGateway = async (gatewayData, userId) => {
 };
 
 const addDevice = async (deviceData, gatewayId, userId) => {
+    const transaction = await mysqlDB.sequelize.transaction();
     try {
-        const gateway = await mysqlDB.Gateway.findByPk(gatewayId);
+        const gateway = await mysqlDB.Gateway.findByPk(gatewayId, { transaction });
         if (!gateway) {
             throw new Error('Gateway not found');
         }
@@ -31,7 +32,7 @@ const addDevice = async (deviceData, gatewayId, userId) => {
             throw new Error('Invalid device type');
         }
 
-        const existingDevice = await mysqlDB.Device.findOne({ where: { macAddress } });
+        const existingDevice = await mysqlDB.Device.findOne({ where: { macAddress }, transaction });
         if (existingDevice) {
             throw new Error('Device with this MAC address already exists');
         }
@@ -43,36 +44,40 @@ const addDevice = async (deviceData, gatewayId, userId) => {
             gatewayId,
             status,
             macAddress,
-        });
+        }, { transaction });
 
         if (type === "actuator") {
-            const { type, ...others } = detail;
-            await Actuator.create({
-                type,
-                properties: others
-            });
+            const { type: actuatorType, ...others } = detail;
+            await mysqlDB.Actuator.create({
+                type: actuatorType,
+                properties: others,
+                id: newDevice.id
+            }, { transaction });
         } else if (type === "sensor") {
-            await Sensor.create({
-                ...detail
-            });
+            await mysqlDB.Sensor.create({
+                ...detail,
+                id: newDevice.id
+            }, { transaction });
         }
 
         const topic = new mongoDb.Topic({
             deviceId: newDevice.id,
             topics: topics
-        })
+        });
 
         await topic.save();
 
+        await transaction.commit();
         return newDevice;
     } catch (error) {
+        await transaction.rollback();
         throw new Error(error.message);
     }
 }
 
 const getGatewayById = async (id) => {
     try {
-        const gateway = await Gateway.findById(id).select('-devices');
+        const gateway = await mysqlDB.Gateway.findById(id).select('-devices');
         if (!gateway) {
             const error = new Error('Not found');
             error.status = 404;
@@ -87,7 +92,7 @@ const getGatewayById = async (id) => {
 
 const getGatewayByUser = async (userId) => {
     try {
-        const gateway = await Gateway.findOne({ userId: userId });
+        const gateway = await mysqlDB.Gateway.findOne({ userId: userId });
         if (!gateway) {
             let error = new Error();
             error.status = 404;
