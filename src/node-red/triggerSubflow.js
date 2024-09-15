@@ -24,21 +24,17 @@ class TimeTrigger extends SubflowBuilder {
         };
       }
       
-      // Phân tích các chuỗi thời gian
       const startTimeParts = parseTimeString('${startTime}');
       const endTimeParts = parseTimeString('${endTime}');
       
-      // Lấy thời gian hiện tại từ msg.payload (giả định rằng msg.payload là thời gian dạng ISO)
       var currentTime = new Date(msg.payload);
       
-      // Tạo các đối tượng ngày giờ với giờ bắt đầu và kết thúc
       var startTime = new Date(currentTime);
       startTime.setHours(startTimeParts.hours, startTimeParts.minutes, startTimeParts.seconds);
       
       var endTime = new Date(currentTime);
       endTime.setHours(endTimeParts.hours, endTimeParts.minutes, endTimeParts.seconds);
       
-      // Kiểm tra xem thời gian hiện tại có nằm trong khoảng thời gian không
       if (currentTime >= startTime && currentTime <= endTime) {
         msg.payload = true;
       } else {

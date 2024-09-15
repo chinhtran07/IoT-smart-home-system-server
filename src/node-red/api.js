@@ -1,5 +1,6 @@
 const { default: axios } = require("axios");
 const NodeCache = require('node-cache');
+const CustomError = require("../utils/CustomError");
 
 const tokenCache = new NodeCache();
 
@@ -41,6 +42,7 @@ const getToken = async (ipAddress) => {
 const createFlow = async (ipAddress, flow) => {
     try {
         const token = await getToken(ipAddress);
+        console.log(flow);
         const response = await axios.post(`http://${ipAddress}:1880/flow`, flow, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -48,9 +50,9 @@ const createFlow = async (ipAddress, flow) => {
             }
         });
 
-        return response.status;
+        return response;
     } catch (error) {
-        throw error;
+        throw new CustomError(`Node-red ${error.message}`, 400);
     } 
 }
 

@@ -2,6 +2,7 @@ const ActionSubflow = require("./actionSubflow");
 const { NodeTypes } = require("./Node");
 const { TimeTrigger, DeviceTrigger } = require("./triggerSubflow");
 const _ = require("lodash");
+const mongodb = require('../models/mongo');
 
 function createBrokerNode(broker) {
   return {
@@ -21,35 +22,37 @@ function createBrokerNode(broker) {
 }
 
 function createTriggers(scenario, brokerNode) {
-  return scenario.triggers.reduce((acc, trigger) => {
+  return scenario.triggers.reduce(async (acc, trigger) => {
     if (trigger.type === "time") {
-      const timeTrigger = new TimeTrigger(trigger._id, "");
-      timeTrigger.build(trigger.startTime, trigger.endTime);
-      acc[trigger._id] = timeTrigger;
+      const timeTrigger = new TimeTrigger(trigger.id, "");
+      timeTrigger.build(trigger.detail.startTime, trigger.detail.endTime);
+      acc[trigger.id] = timeTrigger;
     } else if (trigger.type === "device") {
-      const topic = trigger.device.topics.publisher[0];
-      const deviceTrigger = new DeviceTrigger(trigger._id, "");
-      deviceTrigger.build(topic, brokerNode.id, [{
-        t: trigger.comparator, 
-        v: trigger.deviceStatus, 
-        vt: [typeof trigger.deviceStatus === "number" ? "num" : "str"],
+      const topic = await mongodb.Topic.findOne({ deviceId: trigger.deviceId });
+      const subscriberTopic = topic.topics.publisher[0];
+      const deviceTrigger = new DeviceTrigger(trigger.id, "");
+      subscriberTopic.build(publisherTopic, brokerNode.id, [{
+        t: trigger.detail.comparator, 
+        v: trigger.detail.deviceStatus, 
+        vt: [typeof trigger.detail.deviceStatus === "number" ? "num" : "str"],
       }]);
-      acc[trigger._id] = deviceTrigger;
+      acc[trigger.id] = deviceTrigger;
     }
     return acc;
   }, {});
 }
 
 function createActions(scenario, brokerNode) {
-  return scenario.actions.reduce((acc, action) => {
-    if (!acc[action._id]) {
-      const topic = action.device.topics.subscriber[0];
-      const actionSubflow = new ActionSubflow(action._id, "");
+  return scenario.actions.reduce(async (acc, action) => {
+    if (!acc[action.id]) {
+      const topic = await mongodb.Topic.findOne({ deviceId: action.deviceId });
+      const publisherTopic = topic.topics.subscriber[0];
+      const actionSubflow = new ActionSubflow(action.id, "");
       actionSubflow.build(
-        `{\"action\": \"${action.type}\", \"${action.property}\": ${action.value}}`,
-        topic, brokerNode.id
+        `{\"action\": \"${action.property}\", \"${action.property}\": ${action.value}}`,
+        publisherTopic, brokerNode.id
       );
-      acc[action._id] = actionSubflow;
+      acc[action.id] = actionSubflow;
     }
     return acc;
   }, {});
@@ -74,11 +77,11 @@ function exportNodes(triggerSubflows, actionSubflows) {
   ];
 }
 
-function generateFlow(scenario, broker) {
+async function generateFlow(scenario, broker) {
   const brokerNode = createBrokerNode(broker);
 
-  const triggers = createTriggers(scenario, brokerNode);
-  const actions = createActions(scenario, brokerNode);
+  const triggers = await createTriggers(scenario, brokerNode);
+  const actions = await createActions(scenario, brokerNode);
 
   const triggerSubflows = Object.values(triggers);
   const actionSubflows = Object.values(actions);
@@ -88,7 +91,7 @@ function generateFlow(scenario, broker) {
   const combinedNodes = exportNodes(triggerSubflows, actionSubflows);
 
   return JSON.stringify({
-    id: scenario._id,
+    id: scenario.id,
     label: scenario.name,
     nodes: combinedNodes,
     configs: [brokerNode],

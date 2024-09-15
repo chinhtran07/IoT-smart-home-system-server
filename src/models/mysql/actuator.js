@@ -13,11 +13,6 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false
         },
-        action: {
-            type: DataTypes.ENUM('modify', 'control'),
-            defaultValue: 'control',
-            allowNull: false
-        },
         properties: {
             type: DataTypes.JSON,
             allowNull: false

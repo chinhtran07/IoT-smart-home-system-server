@@ -83,3 +83,4 @@ npm-debug.log*
 yarn-debug.log*
 lerna-debug.log*
 src/config/database.json
+src/config/config.json

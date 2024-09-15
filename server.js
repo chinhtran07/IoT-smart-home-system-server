@@ -8,6 +8,7 @@ const { initSocket } = require("./src/socket/socketHandler");
 const connectDB = require("./src/config/mongdb.config");
 const mysqldb = require("./src/models/mysql");
 const { connectToGateways } = require("./src/mqtt");
+const startService = require("./src/tasks.js/checkHeartbeat");
 
 const server = http.createServer(app);
 const io = socketIo(server);
@@ -28,7 +29,7 @@ mysqldb.sequelize.sync({ force: false }).then(() => {
   console.log("Database synchronized");
 });
 
-
+// startService();
 
 server.listen(config.port, () => {
   console.log(`Server start with http://localhost:${config.port}`);

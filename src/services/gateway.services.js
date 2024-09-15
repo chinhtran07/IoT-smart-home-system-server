@@ -77,7 +77,9 @@ const addDevice = async (deviceData, gatewayId, userId) => {
 
 const getGatewayById = async (id) => {
     try {
-        const gateway = await mysqlDB.Gateway.findById(id).select('-devices');
+        const gateway = await mysqlDB.Gateway.findByPk(id, {
+            attributes: ['id', 'name', 'status']
+        });
         if (!gateway) {
             const error = new Error('Not found');
             error.status = 404;
@@ -92,14 +94,16 @@ const getGatewayById = async (id) => {
 
 const getGatewayByUser = async (userId) => {
     try {
-        const gateway = await mysqlDB.Gateway.findOne({ userId: userId });
-        if (!gateway) {
+        const gateways = await mysqlDB.Gateway.findOne({ userId: userId }, {
+            attributes: ['id', 'name', 'status']
+        });
+        if (!gateways) {
             let error = new Error();
             error.status = 404;
             throw error;
         }
 
-        return gateway;
+        return gateways;
     } catch (error) {
         throw new Error(error.message);
     }

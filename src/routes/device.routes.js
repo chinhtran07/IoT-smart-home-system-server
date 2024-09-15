@@ -5,8 +5,11 @@ const { authorize } = require("../middlewares/auth.middleware");
 const deviceAccess = require("../middlewares/deviceAccess.middleware");
 
 router.get("", authorize(["admin"]), deviceController.getAllDevices);
-router.get("/:deviceId", deviceAccess, deviceController.getDeviceById);
-router.put("/:deviceId", deviceAccess, deviceController.updateDevice);
-router.delete("/:deviceId", deviceAccess, deviceController.deleteDevice);
+router.get("/owner", deviceController.getDevicesOwner);
+router.get("/access-control", deviceController.getDevicesByAccessControl);
+router.get("/:id", deviceAccess, deviceController.getDeviceById);
+router.put("/:id", deviceAccess, deviceController.updateDevice);
+router.delete("/:id", deviceAccess, deviceController.deleteDevice);
+
 
 module.exports = router;

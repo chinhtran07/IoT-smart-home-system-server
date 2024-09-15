@@ -30,11 +30,6 @@ module.exports = (sequelize, DataTypes) => {
                 key: 'id',
             },
         },
-        type: {
-            type: DataTypes.ENUM('modify', 'control'),
-            allowNull: false,
-            defaultValue: 'control'
-        },
         property: {
             type: DataTypes.STRING,
             defaultValue: 'control'
