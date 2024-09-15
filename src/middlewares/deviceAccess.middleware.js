@@ -1,20 +1,24 @@
-const { where } = require('sequelize');
 const mongoDb = require('../models/mongo');
 const mysqlDb = require('../models/mysql');
 
 const checkDeviceAccess = async (req, res, next) => {
     try {
-        const { deviceId } = req.body;
+        const id = req.params.id;
 
-        const device = await mysqlDb.Device.findByPk(deviceId);
+        const device = await mysqlDb.Device.findByPk(id);
 
         if (!device) {
             return res.status(404).json({ message: 'Device not found' });
         }
 
+        if (device.userId === req.user._id) {
+            next();
+            return;
+        }
+
         const access = await mongoDb.AccessControl.findOne({
             userId: req.user._id,
-            'permissions.device': deviceId
+            'permissions.device': id
         });
 
         if (!access) {

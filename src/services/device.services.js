@@ -24,22 +24,26 @@ const getDeviceById = async (id) => {
   }
 };
 
-const updateDevice = async (id, deviceData) => {
+const updateDevice = async (id, dataToUpdate) => {
   try {
-    const [updated] = await mysqlDb.Device.update(deviceData, {
-      where: { id },
-      returning: true,
-    });
-    if (updated === 0) {
-      const error = new Error("Device not found");
-      error.status = 404;
-      throw error;
-    }
-    return updated;
+      const device = await mysqlDb.Device.findByPk(id);
+
+      // Nếu thiết bị không tồn tại, ném lỗi
+      if (!device) {
+          const error = new Error("Device not found");
+          error.status = 404;
+          throw error;
+      }
+
+      const updatedDevice = await device.update(dataToUpdate);
+
+      return updatedDevice; 
   } catch (error) {
-    throw error;
+      throw error;
   }
 };
+
+
 
 const deleteDevice = async (id) => {
   try {
@@ -58,18 +62,19 @@ const deleteDevice = async (id) => {
 
 const getDevicesOwner = async (userId, page = 1, limit = 10) => {
   try {
-    const gateways = await mysqlDb.Gateway.findAll({ where: { userId } });
+    const gateways = await mysqlDb.Gateway.findAll({ userId: userId });
 
     const gatewayIds = gateways.map(gateway => gateway.id);
 
     const offset = (page - 1) * limit;
 
-    const { count, rows } = await Device.findAndCountAll({
+    const { count, rows } = await mysqlDb.Device.findAndCountAll({
       where: {
         gatewayId: gatewayIds
       },
       limit: limit,
       offset: offset,
+      attributes: ['id', 'name', 'type', 'status']
     });
 
     return {

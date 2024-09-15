@@ -20,12 +20,12 @@ const getCurrentUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    const updateData = req.body;
-    const updatedUser = await userServices.updateUserProfile(
+    const {firstName, lastName, email, phone} = req.body;
+    await userServices.updateUserProfile(
       req.user._id,
-      updateData
+      {firstName, lastName, email, phone}
     );
-    res.status(200).json(updatedUser);
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }
@@ -39,7 +39,7 @@ const changePassword = async (req, res, next) => {
       currentPassword,
       newPassword
     );
-    res.status(200);
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }

@@ -1,12 +1,15 @@
 const bcrypt = require("bcryptjs");
 const paginate = require("../utils/paginator");
-const mysqlDb = require('../models/mysql');
+const mysqlDb = require("../models/mysql");
+const CustomError = require("../utils/CustomError");
 
 const getProfile = async (userId) => {
   try {
     const user = await mysqlDb.User.findOne({
       where: { id: userId },
-      attributes: { exclude: ['password'] }
+      attributes: {
+        exclude: ["password", "createdAt", "updatedAt", "username"],
+      },
     });
     if (!user) {
       const error = new Error("User not found");
@@ -21,25 +24,29 @@ const getProfile = async (userId) => {
 
 const updateUserProfile = async (userId, updateData) => {
   try {
+
+    if (Object.keys(updateData).length < 0) {
+      return new CustomError("Emtpy updated data", 400);
+    }
+
     const [updated] = await mysqlDb.User.update(updateData, {
       where: { id: userId },
-      returning: true
     });
-    if (!updated) {
-      const error = new Error("User not found");
-      error.status = 404;
-      throw error;
+
+    if (updated === 0) {
+      throw new CustomError("Updated data is invalid", 400);
     }
-    return updated[0];
+
+    const updatedUser = await mysqlDb.User.findByPk(userId);
+    return updatedUser;
   } catch (error) {
     throw error;
   }
 };
 
-
 const changePassword = async (userId, currentPassword, newPassword) => {
   try {
-    const user = await mysqlDb.User.findOne({ where: { id: userId } });
+    const user = await mysqlDb.User.findByPk(userId);
     if (!user) {
       const error = new Error("User not found");
       error.status = 404;
@@ -53,13 +60,16 @@ const changePassword = async (userId, currentPassword, newPassword) => {
       throw error;
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword;
     await user.save();
+
+    return true;
   } catch (error) {
     throw error;
   }
 };
 
+//test
 const getAllUsers = async (queryParams) => {
   try {
     const { page = 1, limit = 10 } = queryParams;
@@ -67,19 +77,19 @@ const getAllUsers = async (queryParams) => {
 
     const { rows, count } = await mysqlDb.User.findAndCountAll({
       limit,
-      offset
+      offset,
     });
 
     return {
       total: count,
-      users: rows
+      users: rows,
     };
   } catch (error) {
     throw error;
   }
 };
 
-
+//test
 const deleteUser = async (userId) => {
   try {
     const user = await mysqlDb.User.findOne({ where: { id: userId } });
@@ -94,8 +104,6 @@ const deleteUser = async (userId) => {
     throw error;
   }
 };
-
-
 
 module.exports = {
   getProfile,

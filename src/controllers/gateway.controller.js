@@ -31,8 +31,19 @@ const getGatewayById = async (req, res, next) => {
     }
 }
 
+const getGatewaysByUser = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const gateways = await gatewayService.getGatewayByUser(userId);
+        res.status(200).json(gateways);
+    } catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createGateway,
     addDevice,
-    getGatewayById
+    getGatewayById,
+    getGatewaysByUser
 }

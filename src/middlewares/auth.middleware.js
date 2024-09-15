@@ -8,7 +8,7 @@ const authenticate = async (req, res, next) => {
       ? authHeader.split(" ")[1]
       : null;
 
-  if (token == null) next(new CustomError("Missing token", 401));
+  if (token == null) next(new Error("Missing token"));
   try {
     const decoded = jwt.verify(token, config.jwt.secret);
     req.user = decoded;
