@@ -1,4 +1,3 @@
-// mqttClient.js
 const mqtt = require("mqtt");
 const myEmitter = require("../events/eventsEmitter");
 const mysqlDb = require("../models/mysql");
@@ -51,7 +50,7 @@ const connectToGateway = async (gateway) => {
       }).exec();
       if (topicDoc) {
         const device = await mysqlDb.Device.findByPk(topicDoc.deviceId, {
-          attributes: ["id", "status"],
+          attributes: ["id", "status", "type"],
         });
         if (device) {
           const data = JSON.parse(message.toString());

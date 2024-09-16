@@ -1,7 +1,6 @@
 const { getGatewayByUser } = require("../services/gateway.services");
 const scenarioService = require("../services/scenario.service");
 const generateFlow = require("../node-red/generateFlow");
-const { createFlow, updateFlow } = require("../node-red/api");
 
 const createAutomationScenario = async (req, res, next) => {
   try {
@@ -19,12 +18,7 @@ const updateAutomationScenario = async (req, res, next) => {
     const scenarioId = req.params.id;
     const gateway = await getGatewayByUser(userId);
     const scenario = await scenarioService.updateScenario(scenarioId, req.body);
-
-    const flowJson = await generateFlow(scenario, gateway);
-
-    const status = await updateFlow(gateway.ipAddress, flowJson, scenarioId);
-
-    res.status(status);
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }

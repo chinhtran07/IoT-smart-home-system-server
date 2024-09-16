@@ -1,12 +1,13 @@
 // mqttControl.js
 const { clients } = require('./mqttClient');
 
-const publishControlMessage = ({ gatewayId, topic, payload }) => {
+const publishControlMessage = ( gatewayId, topic, payload ) => {
     const client = clients[gatewayId];
+
+    console.log(payload);
     if (client) {
         try {
-            console.log(client);
-            client.publish(topic, JSON.stringify(payload), (err) => {
+            client.publish(topic, payload, true ,(err) => {
                 if (err) {
                     console.error(`Failed to publish to topic ${topic}`, err);
                 } else {

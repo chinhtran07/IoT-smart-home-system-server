@@ -2,7 +2,7 @@ const { v4: uuidv4 } = require("uuid");
 const mysqlDb = require("../models/mysql");
 const CustomError = require("../utils/CustomError");
 const generateFlow = require("../node-red/generateFlow");
-const { createFlow } = require("../node-red/api");
+const { createFlow, updateFlow, deleteFlow } = require("../node-red");
 
 const createScenario = async (data, userId) => {
   const transaction = await mysqlDb.sequelize.transaction();
@@ -32,22 +32,17 @@ const createScenario = async (data, userId) => {
       throw new CustomError("Gateway not found for user", 404);
     }
 
-    // Ensure triggers, conditions, and actions exist
     const scenarioJson = {
       id: scenario.id,
       name: scenario.name,
       isEnabled: scenario.isEnabled,
       actions: transformActions(data.actions),
       triggers: transformTriggers(data.triggers),
-      conditions: transformConditions(data.conditions)
+      conditions: transformConditions(data.conditions),
     };
+    const res = await createFlow(gateway.ipAddress, scenarioJson);
 
-    const flowJson = await generateFlow(scenarioJson, gateway);
-
-    const res = await createFlow(gateway.ipAddress, flowJson);
-
-    if (res.status === 200) 
-        await transaction.commit();
+    if (res.status === 200) await transaction.commit();
 
     return scenario;
   } catch (error) {
@@ -58,7 +53,6 @@ const createScenario = async (data, userId) => {
 
 const getScenarioById = async (scenarioId) => {
   try {
-    // Lấy thông tin cơ bản của scenario và các liên kết chính
     const scenario = await mysqlDb.Scenario.findByPk(scenarioId, {
       include: [
         {
@@ -73,7 +67,6 @@ const getScenarioById = async (scenarioId) => {
       throw new CustomError("Scenario not found", 404);
     }
 
-    // Truy vấn Trigger và Conditions cùng một lúc
     const [triggers, conditions] = await Promise.all([
       mysqlDb.Trigger.findAll({
         where: { scenarioId },
@@ -159,14 +152,12 @@ const updateScenario = async (scenarioId, data) => {
       throw new CustomError("Scenario not found", 404);
     }
 
-    // Process Triggers and Conditions in parallel
     await Promise.all([
       processTriggers(data.triggers, scenario.id, transaction),
       processConditions(data.conditions, scenario.id, transaction),
       processActions(data.actions, scenario.id, transaction),
     ]);
 
-    // Update Scenario
     const updatedScenario = await scenario.update(
       {
         name: data.name,
@@ -175,7 +166,28 @@ const updateScenario = async (scenarioId, data) => {
       { transaction }
     );
 
-    await transaction.commit();
+    const gateway = await mysqlDb.Gateway.findOne({
+      where: { userId },
+      attributes: ["ipAddress"],
+    });
+
+    if (!gateway) {
+      throw new CustomError("Gateway not found for user", 404);
+    }
+
+    const scenarioJson = {
+      id: updatedScenario.id,
+      name: updatedScenario.name,
+      isEnabled: updatedScenario.isEnabled,
+      actions: transformActions(data.actions),
+      triggers: transformTriggers(data.triggers),
+      conditions: transformConditions(data.conditions),
+    };
+
+    const res = await updateFlow(gateway.ipAddress, scenarioJson, scenarioId);
+
+    if (res.status === 204) await transaction.commit();
+
     return updatedScenario;
   } catch (error) {
     await transaction.rollback();
@@ -186,7 +198,6 @@ const updateScenario = async (scenarioId, data) => {
 const processTriggers = async (triggers, scenarioId, transaction) => {
   const triggerPromises = triggers.map(async (trigger) => {
     if (trigger.id) {
-      // Update existing trigger
       await mysqlDb.Trigger.update(trigger, {
         where: { id: trigger.id },
         transaction,
@@ -213,7 +224,6 @@ const processTriggers = async (triggers, scenarioId, transaction) => {
         );
       }
     } else {
-      // Create new trigger
       const newTrigger = await mysqlDb.Trigger.create(
         { ...trigger, scenarioId },
         { transaction }
@@ -248,7 +258,6 @@ const processTriggers = async (triggers, scenarioId, transaction) => {
 const processConditions = async (conditions, scenarioId, transaction) => {
   const conditionPromises = conditions.map(async (condition) => {
     if (condition.id) {
-      // Update existing condition
       await mysqlDb.Condition.update(condition, {
         where: { id: condition.id },
         transaction,
@@ -275,7 +284,6 @@ const processConditions = async (conditions, scenarioId, transaction) => {
         );
       }
     } else {
-      // Create new condition
       const newCondition = await mysqlDb.Condition.create(
         { ...condition, scenarioId },
         { transaction }
@@ -338,7 +346,19 @@ const deleteScenario = async (scenarioId) => {
       mysqlDb.Action.destroy({ where: { scenarioId }, transaction }),
     ]);
 
-    await scenario.destroy({ transaction });
+    const gateway = await mysqlDb.Gateway.findOne({
+      where: { userId },
+      attributes: ["ipAddress"],
+    });
+
+    if (!gateway) {
+      throw new CustomError("Gateway not found for user", 404);
+    }
+
+    const res = await deleteFlow(gateway.ipAddress, scenarioId);
+
+    if (res.status === 204)
+      await scenario.destroy({ transaction });
 
     await transaction.commit();
     return { message: "Scenario deleted successfully" };
@@ -348,46 +368,47 @@ const deleteScenario = async (scenarioId) => {
   }
 };
 
+const transformActions = (actions) =>
+  actions.map((action) => ({
+    id: uuidv4(),
+    deviceId: action.deviceId,
+    property: action.property,
+    value: action.value,
+  }));
 
-const transformActions = (actions) => 
-    actions.map((action) => ({
-      id: uuidv4(),
-      deviceId: action.deviceId,
-      property: action.property,
-      value: action.value,
-    }));
-  
-  const transformTriggers = (triggers) =>
-    triggers.map((trigger) => ({
-      id: uuidv4(),
-      type: trigger.type,
-      detail: trigger.type === "device"
+const transformTriggers = (triggers) =>
+  triggers.map((trigger) => ({
+    id: uuidv4(),
+    type: trigger.type,
+    detail:
+      trigger.type === "device"
         ? {
-            deviceId: trigger.deviceId,
-            comparator: trigger.comparator,
-            deviceStatus: trigger.deviceStatus,
-          }
+          deviceId: trigger.deviceId,
+          comparator: trigger.comparator,
+          deviceStatus: trigger.deviceStatus,
+        }
         : {
-            startTime: trigger.startTime,
-            endTime: trigger.endTime,
-          },
-    }));
-  
-  const transformConditions = (conditions) =>
-    conditions.map((condition) => ({
-      id: uuidv4(),
-      type: condition.type,
-      detail: condition.type === "device"
+          startTime: trigger.startTime,
+          endTime: trigger.endTime,
+        },
+  }));
+
+const transformConditions = (conditions) =>
+  conditions.map((condition) => ({
+    id: uuidv4(),
+    type: condition.type,
+    detail:
+      condition.type === "device"
         ? {
-            deviceId: condition.deviceId,
-            comparator: condition.comparator,
-            deviceStatus: condition.deviceStatus,
-          }
+          deviceId: condition.deviceId,
+          comparator: condition.comparator,
+          deviceStatus: condition.deviceStatus,
+        }
         : {
-            startTime: condition.startTime,
-            endTime: condition.endTime,
-          },
-    }));
+          startTime: condition.startTime,
+          endTime: condition.endTime,
+        },
+  }));
 
 module.exports = {
   createScenario,

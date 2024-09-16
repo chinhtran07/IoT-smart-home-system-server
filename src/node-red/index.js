@@ -1,6 +1,7 @@
 const { default: axios } = require("axios");
 const NodeCache = require('node-cache');
 const CustomError = require("../utils/CustomError");
+const generateFlow = require("./generateFlow");
 
 const tokenCache = new NodeCache();
 
@@ -42,8 +43,8 @@ const getToken = async (ipAddress) => {
 const createFlow = async (ipAddress, flow) => {
     try {
         const token = await getToken(ipAddress);
-        console.log(flow);
-        const response = await axios.post(`http://${ipAddress}:1880/flow`, flow, {
+        const flowJson = await generateFlow(flow, ipAddress);
+        const response = await axios.post(`http://${ipAddress}:1880/flow`, flowJson, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"
@@ -59,7 +60,8 @@ const createFlow = async (ipAddress, flow) => {
 const updateFlow = async (ipAddress, flow, scenorioId) => {
     try {
         const token = await getToken(ipAddress);
-        const response = await axios.put(`http://${ipAddress}:1880/flow/${scenorioId}`, flow, {
+        const flowJson = await generateFlow(flow, ipAddress);
+        const response = await axios.put(`http://${ipAddress}:1880/flow/${scenorioId}`, flowJson, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json"

@@ -8,7 +8,7 @@ function createBrokerNode(broker) {
   return {
     id: "mqtt_broker_id",
     type: "mqtt-broker",
-    broker: broker.ipAddress,
+    broker: broker,
     port: "1883",
     clientid: "",
     usetls: false,
@@ -49,7 +49,7 @@ function createActions(scenario, brokerNode) {
       const publisherTopic = topic.topics.subscriber[0];
       const actionSubflow = new ActionSubflow(action.id, "");
       actionSubflow.build(
-        `{\"action\": \"${action.property}\", \"${action.property}\": ${action.value}}`,
+        `{\"${action.property}\": ${action.value}}`,
         publisherTopic, brokerNode.id
       );
       acc[action.id] = actionSubflow;
