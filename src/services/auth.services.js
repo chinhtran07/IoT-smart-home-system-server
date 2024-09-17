@@ -12,21 +12,41 @@ const registerUser = async (username, password, firstName, lastName, email, phon
    }
 }
 
-const loginUser = async (username, password) => {
+const loginUser = async (email, password) => {
     try {
-      const user = await db.User.findOne({ where: { username }});
+      const user = await db.User.findOne({ where: { email: email }});
       if (!user) throw new Error('Invalid username or password');
   
       const isMatch = await user.comparePassword(password);
       if (!isMatch) throw new Error('Invalid username or password');
   
-      const token = user.generateAuthToken();
+      const {token, refreshToken} = user.generateAuthToken();
   
-      return token;
+      return {token, refreshToken};
     } catch (error) {
       throw new Error(`Error logging in user: ${error.message}`);
     }
-  };
+};
   
 
-module.exports = {registerUser, loginUser};
+const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new CustomError("Refresh token is required", 400);
+  }
+
+  const decoded = jwt.verify(refreshToken, config.jwt.refresh_secret);
+  if (!decoded) {
+    throw new CustomError("Invalid refresh token", 403);
+  }
+
+  const user = await db.User.findByPk(decoded._id);
+  if (!user || user.refreshToken !== refreshToken) {
+    throw new CustomError("User not found or invalid refresh token", 403);
+  }
+
+  const newTokens = await this.generateTokens(user);
+  return newTokens;
+}
+  
+
+module.exports = {registerUser, loginUser, refreshAccessToken};

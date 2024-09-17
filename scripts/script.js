@@ -1,7 +1,6 @@
-const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
-bcrypt.genSalt(10).then(async (salt) => {
-    const password = await bcrypt.hash("123456", salt);
-    console.log(password);
-});
+// Tạo chuỗi bí mật ngẫu nhiên dài 32 bytes
+const refreshSecret = crypto.randomBytes(64).toString('hex');
 
+console.log('Refresh Secret:', refreshSecret);

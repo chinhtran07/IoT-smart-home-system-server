@@ -61,17 +61,31 @@ module.exports = (sequelize, DataTypes) => {
     return bcrypt.compare(candidatePassword, this.password);
   };
 
-  User.prototype.generateAuthToken = function () {
+  User.prototype.generateAuthToken = async function () {
     const token = jwt.sign(
       {
         _id: this.id,
-        username: this.username,
+        email: this.email,
         role: this.role,
       },
       config.jwt.secret,
       { expiresIn: config.jwt.expiresIn }
     );
-    return token;
+
+    const refreshToken = jwt.sign(
+      {
+        _id: this.id,
+        email: this.email,
+        role: this.role,
+      },
+      config.jwt.refresh_secret,
+      { expiresIn: '7d'}
+    )
+
+    this.refreshToken = refreshToken;
+    await this.save();
+    
+    return {token, refreshToken};
   };
 
   return User;
