@@ -20,9 +20,9 @@ const loginUser = async (email, password) => {
       const isMatch = await user.comparePassword(password);
       if (!isMatch) throw new Error('Invalid username or password');
   
-      const {token, refreshToken} = user.generateAuthToken();
+      const tokens = user.generateAuthToken();
   
-      return {token, refreshToken};
+      return tokens;
     } catch (error) {
       throw new Error(`Error logging in user: ${error.message}`);
     }

@@ -81,9 +81,6 @@ module.exports = (sequelize, DataTypes) => {
       config.jwt.refresh_secret,
       { expiresIn: '7d'}
     )
-
-    this.refreshToken = refreshToken;
-    await this.save();
     
     return {token, refreshToken};
   };

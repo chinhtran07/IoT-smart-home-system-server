@@ -26,13 +26,13 @@ const registerUser = async (req, res, next) => {
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const { token, refreshToken } = await authServices.loginUser(
+    const tokens = await authServices.loginUser(
       email,
       password
     );
     res.json({
-      access_token: token,
-      refresh_token: refreshToken,
+      access_token: tokens.token,
+      refresh_token: tokens.refreshToken,
       expireIn: config.jwt.expiresIn,
     });
   } catch (error) {
