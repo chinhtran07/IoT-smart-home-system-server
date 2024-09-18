@@ -1,27 +1,52 @@
-const User = require('../models/User');
+const db = require("../models/mysql");
 
 const registerUser = async (username, password, firstName, lastName, email, phone) => {
-    const newUser = new User({
-        username: username,
-        password: password,
-        firstName: firstName,
-        lastName: lastName,
-        email: email
-    });
-    await newUser.save();
+    try {
 
-    return newUser;
+        const newUser = await db.User.create({ username, password, firstName, lastName, email, phone });
+        
+        return newUser;
+       
+    } catch (error) {
+        throw error;
+   }
 }
 
-const loginUser = async (username, password) => {
-    const user = await User.findOne({ 'username': username });
-    const isMatch = user.comparePassword(password);
-    if (!user || !isMatch)
-        throw new CustomError('Invalid username or password', 400);
+const loginUser = async (email, password) => {
+    try {
+      const user = await db.User.findOne({ where: { email: email }});
+      if (!user) throw new Error('Invalid username or password');
+  
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) throw new Error('Invalid username or password');
+  
+      const tokens = user.generateAuthToken();
+  
+      return tokens;
+    } catch (error) {
+      throw new Error(`Error logging in user: ${error.message}`);
+    }
+};
+  
 
-    const token = user.generateAuthToken();
+const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new CustomError("Refresh token is required", 400);
+  }
 
-    return token;
+  const decoded = jwt.verify(refreshToken, config.jwt.refresh_secret);
+  if (!decoded) {
+    throw new CustomError("Invalid refresh token", 403);
+  }
+
+  const user = await db.User.findByPk(decoded._id);
+  if (!user || user.refreshToken !== refreshToken) {
+    throw new CustomError("User not found or invalid refresh token", 403);
+  }
+
+  const newTokens = await this.generateTokens(user);
+  return newTokens;
 }
+  
 
-module.exports = {registerUser, loginUser};
+module.exports = {registerUser, loginUser, refreshAccessToken};

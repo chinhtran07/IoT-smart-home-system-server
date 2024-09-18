@@ -5,6 +5,7 @@ module.exports = {
     port: process.env.PORT,
     jwt: {
         secret: process.env.JWT_SECRET,
+        refresh_secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '1h'
     },
     mqtt: {
