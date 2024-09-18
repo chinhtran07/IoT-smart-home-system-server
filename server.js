@@ -29,7 +29,7 @@ mysqldb.sequelize.sync({ force: false }).then(() => {
   console.log("Database synchronized");
 });
 
-// startService();
+startService();
 
 server.listen(config.port, () => {
   console.log(`Server start with http://localhost:${config.port}`);

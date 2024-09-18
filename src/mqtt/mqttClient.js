@@ -49,9 +49,23 @@ const connectToGateway = async (gateway) => {
         "topics.publisher": topic,
       }).exec();
       if (topicDoc) {
-        const device = await mysqlDb.Device.findByPk(topicDoc.deviceId, {
-          attributes: ["id", "status", "type"],
-        });
+        const deviceId = topicDoc.deviceId;
+
+        // Check Redis cache for device status
+        const cachedStatus = await redisClient.get(`deviceStatus:${deviceId}`);
+        let device;
+        if (cachedStatus) {
+          device = JSON.parse(cachedStatus);
+        } else {
+          device = await mysqlDb.Device.findByPk(deviceId, {
+            attributes: ["id", "status", "type"],
+          });
+          if (device) {
+            // Cache device status in Redis
+            await redisClient.set(`deviceStatus:${deviceId}`, JSON.stringify(device), { EX: 3600 });
+          }
+        }
+
         if (device) {
           const data = JSON.parse(message.toString());
 
@@ -63,11 +77,13 @@ const connectToGateway = async (gateway) => {
                 { status: "online" },
                 { where: { id: device.id } }
               );
+              // Update cache after status change
+              await redisClient.set(`deviceStatus:${deviceId}`, JSON.stringify({ ...device, status: "online" }), { EX: 3600 });
             }
 
             myEmitter.emit("heartbeat", { device, data });
 
-            redisClient.set(`heartbeat:${device.id}`, new Date().toISOString());
+            await redisClient.set(`heartbeat:${device.id}`, new Date().toISOString());
           } else {
             myEmitter.emit("dataReceived", { device, data });
           }

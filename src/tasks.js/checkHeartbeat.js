@@ -1,25 +1,23 @@
 const mysqlDb = require('../models/mysql');
 const redisClient = require('../config/redis.config'); 
+const myEmitter = require('../events/eventsEmitter');
 
 const checkHeartbeat = async () => {
     try {
+        // Fetch all devices from MySQL
         const devices = await mysqlDb.Device.findAll({
             attributes: ['id', 'status']
         });
         const now = new Date();
 
-        // Kiểm tra từng thiết bị
-        for (const device of devices) {
+        // Prepare an array of promises for checking heartbeats
+        const checkPromises = devices.map(async (device) => {
             const deviceId = device.id;
 
-            // Lấy thời gian heartbeat từ Redis
-            redisClient.get(`heartbeat:${deviceId}`, async (err, lastHeartbeat) => {
-                if (err) {
-                    console.error('Error fetching heartbeat from Redis:', err);
-                    return;
-                }
-
-                console.log(lastHeartbeat);
+            try {
+                // Get last heartbeat time from Redis
+                const lastHeartbeat = await redisClient.get(`heartbeat:${deviceId}`);
+                console.log(`Last heartbeat for device ${deviceId}: ${lastHeartbeat}`);
 
                 if (lastHeartbeat) {
                     const lastTime = new Date(lastHeartbeat);
@@ -28,25 +26,29 @@ const checkHeartbeat = async () => {
                     if (diffMinutes >= 1) {
                         console.log(`Device ${deviceId} is Offline`);
 
+                        // Update device status in MySQL
                         await mysqlDb.Device.update(
                             { status: 'offline' },
                             { where: { id: deviceId } }
                         );
 
-                        redisClient.del(`heartbeat:${deviceId}`);
+                        data = {
+                            alive: false,
+                        }
+
+                        // Delete heartbeat data from Redis
+                        await redisClient.del(`heartbeat:${deviceId}`);
+                        myEmitter.emit("heartbeat",  {device, data} );
+
                     }
-                } else {
-                    console.log(`No heartbeat data found for device ${deviceId}. Marking as Offline.`);
-
-                    await mysqlDb.Device.update(
-                        { status: 'offline' },
-                        { where: { id: deviceId } }
-                    );
-
-                    // emit to socket
                 }
-            });
-        }
+            } catch (err) {
+                console.error(`Error processing heartbeat for device ${deviceId}:`, err);
+            }
+        });
+
+        // Wait for all heartbeat checks to complete
+        await Promise.all(checkPromises);
     } catch (error) {
         console.error('Error checking heartbeat:', error.message);
     }
@@ -54,6 +56,6 @@ const checkHeartbeat = async () => {
 
 const startService = () => {
     setInterval(checkHeartbeat, 60000);
-}
+};
 
 module.exports = startService;
