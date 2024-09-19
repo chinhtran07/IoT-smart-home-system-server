@@ -3,24 +3,26 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('actuators', {
-      id: {
+    await queryInterface.createTable('action_scenarios', {
+      deviceId: {
         type: Sequelize.UUID,
+        allowNull: false,
         references: {
-          model: 'devices', 
+          model: 'actions',
           key: 'id',
         },
-        primaryKey: true,
         onDelete: 'CASCADE',
+        primaryKey: true, 
+      },
+      scenarioId: {
+        type: Sequelize.UUID,
         allowNull: false,
-      },
-      type: { 
-        type: Sequelize.STRING, 
-        allowNull: false 
-      },
-      properties: {
-        type: Sequelize.JSON,
-        allowNull: false
+        references: {
+          model: 'scenarios', 
+          key: 'id',
+        },
+        onDelete: 'CASCADE',
+        primaryKey: true,
       },
       createdAt: {
         allowNull: false,
@@ -36,6 +38,6 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('actuators');
+    await queryInterface.dropTable('action_scenarios');
   }
 };
