@@ -55,6 +55,9 @@ const createFlow = async (ipAddress, flow) => {
     console.log(ipAddress);
     const token = await getToken(ipAddress);
     const flowJson = await generateFlow(flow, ipAddress);
+
+    console.log(flowJson);
+
     const response = await axios.post(`http://${ipAddress}:1880/flow`, flowJson, {
       headers: {
         Authorization: `Bearer ${token}`,

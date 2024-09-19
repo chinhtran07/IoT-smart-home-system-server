@@ -1,6 +1,7 @@
 const { uniqueId } = require("lodash");
 const Flow = require("./Flow");
 const { Node, NodeTypes } = require("./Node");
+const { v4: uuidv4 } = require('uuid');
 
 class SubflowBuilder {
   constructor(id, label) {
@@ -20,7 +21,7 @@ class SubflowBuilder {
   }
 
   generateId() {
-    return uniqueId("node");
+    return uniqueId(uuidv4());
   }
 
   export() {

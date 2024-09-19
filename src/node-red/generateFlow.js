@@ -3,10 +3,11 @@ const { NodeTypes } = require("./Node");
 const { TimeTrigger, DeviceTrigger } = require("./triggerSubflow");
 const _ = require("lodash");
 const mongodb = require('../models/mongo');
+const { v4: uuidv4 } = require('uuid');
 
 function createBrokerNode(broker) {
   return {
-    id: "mqtt_broker_id",
+    id: uuidv4(),
     type: "mqtt-broker",
     broker: broker,
     port: "1883",
@@ -89,6 +90,8 @@ async function generateFlow(scenario, broker) {
   connectTriggersAndActions(triggerSubflows, actionSubflows);
 
   const combinedNodes = exportNodes(triggerSubflows, actionSubflows);
+
+  console.log(scenario.id);
 
   return JSON.stringify({
     id: scenario.id,
