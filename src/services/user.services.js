@@ -8,7 +8,7 @@ const getProfile = async (userId) => {
     const user = await mysqlDb.User.findOne({
       where: { id: userId },
       attributes: {
-        exclude: ["password", "createdAt", "updatedAt", "username"],
+        exclude: ["password", "createdAt", "updatedAt", "username", "refreshToken"],
       },
     });
     if (!user) {

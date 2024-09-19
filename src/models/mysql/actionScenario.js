@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
     const ActionScenario = sequelize.define('ActionScenario', {
-        deviceId: {
+        actionId: {
             type: DataTypes.UUID,
             references: {
                 model: 'actions',

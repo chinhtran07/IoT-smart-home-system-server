@@ -1,33 +1,47 @@
+const config = require("../config");
 const db = require("../models/mysql");
+const jwt = require("jsonwebtoken");
+const CustomError = require("../utils/CustomError");
 
-const registerUser = async (username, password, firstName, lastName, email, phone) => {
-    try {
+const registerUser = async (
+  username,
+  password,
+  firstName,
+  lastName,
+  email,
+  phone
+) => {
+  try {
+    const newUser = await db.User.create({
+      username,
+      password,
+      firstName,
+      lastName,
+      email,
+      phone,
+    });
 
-        const newUser = await db.User.create({ username, password, firstName, lastName, email, phone });
-        
-        return newUser;
-       
-    } catch (error) {
-        throw error;
-   }
-}
+    return newUser;
+  } catch (error) {
+    throw error;
+  }
+};
 
 const loginUser = async (email, password) => {
-    try {
-      const user = await db.User.findOne({ where: { email: email }});
-      if (!user) throw new Error('Invalid username or password');
-  
-      const isMatch = await user.comparePassword(password);
-      if (!isMatch) throw new Error('Invalid username or password');
-  
-      const tokens = user.generateAuthToken();
-  
-      return tokens;
-    } catch (error) {
-      throw new Error(`Error logging in user: ${error.message}`);
-    }
+  try {
+    const user = await db.User.findOne({ where: { email: email } });
+    if (!user) throw new Error("Invalid username or password");
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) throw new Error("Invalid username or password");
+
+    const tokens = user.generateAuthToken();
+
+    return tokens;
+  } catch (error) {
+    throw new Error(`Error logging in user: ${error.message}`);
+  }
 };
-  
 
 const refreshAccessToken = async (refreshToken) => {
   if (!refreshToken) {
@@ -44,9 +58,9 @@ const refreshAccessToken = async (refreshToken) => {
     throw new CustomError("User not found or invalid refresh token", 403);
   }
 
-  const newTokens = await this.generateTokens(user);
-  return newTokens;
-}
-  
+  const newTokens = await user.generateAuthToken();
 
-module.exports = {registerUser, loginUser, refreshAccessToken};
+  return newTokens;
+};
+
+module.exports = { registerUser, loginUser, refreshAccessToken };

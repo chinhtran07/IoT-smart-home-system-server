@@ -49,7 +49,7 @@ function createActions(scenario, brokerNode) {
       const publisherTopic = topic.topics.subscriber[0];
       const actionSubflow = new ActionSubflow(action.id, "");
       actionSubflow.build(
-        `{\"${action.property}\": ${action.value}}`,
+        `{\"${action.property}\": \"${action.value}\"}`,
         publisherTopic, brokerNode.id
       );
       acc[action.id] = actionSubflow;

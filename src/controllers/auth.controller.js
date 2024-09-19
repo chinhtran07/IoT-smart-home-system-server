@@ -17,7 +17,7 @@ const registerUser = async (req, res, next) => {
     delete userWithoutPassword.password;
     delete userWithoutPassword.role;
 
-    res.status(201).json({ userWithoutPassword });
+    res.status(201).json({ ...userWithoutPassword });
   } catch (error) {
     next(error);
   }

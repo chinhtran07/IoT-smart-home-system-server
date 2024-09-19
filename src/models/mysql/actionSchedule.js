@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
     const ActionSchedule = sequelize.define('ActionSchedule', {
-        deviceId: {
+        actionId: {
             type: DataTypes.UUID,
             references: {
                 model: 'actions',
@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
             primaryKey: true,
         }
     }, {
-        tableName: "action_schedule",
+        tableName: "action_schedules",
         timestamps: true,
     });
 

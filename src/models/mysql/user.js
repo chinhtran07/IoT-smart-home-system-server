@@ -42,6 +42,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("admin", "user"),
         defaultValue: "user",
       },
+      refreshToken: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      }
     },
     {
       tableName: "users",
@@ -79,9 +83,12 @@ module.exports = (sequelize, DataTypes) => {
         role: this.role,
       },
       config.jwt.refresh_secret,
-      { expiresIn: '7d'}
-    )
+      { expiresIn: '7d' }
+    );
     
+    this.refreshToken = refreshToken;
+    await this.save();
+
     return {token, refreshToken};
   };
 

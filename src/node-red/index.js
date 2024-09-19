@@ -31,27 +31,28 @@ const login = async (ipAddress) => {
 };
 
 const getToken = async (ipAddress) => {
-  return new Promise((resolve, reject) => {
-    redisClient.get(`token:${ipAddress}`, async (err, token) => {
-      if (err) {
-        return reject(err);
-      }
-      if (token) {
-        return resolve(token);
-      }
+  try {
+    const cachedToken = await redisClient.get(`token:${ipAddress}`);
+    
+    if (cachedToken) {
+      return cachedToken; 
+    }
 
-      try {
-        const newToken = await login(ipAddress);
-        resolve(newToken);
-      } catch (error) {
-        reject(error);
-      }
-    });
-  });
+    const newToken = await login(ipAddress);
+    
+    await redisClient.setEx(`token:${ipAddress}`, 3600, newToken);
+    
+    return newToken;
+
+  } catch (error) {
+    throw new CustomError(`Failed to get token: ${error.message}`, 500);
+  }
 };
+
 
 const createFlow = async (ipAddress, flow) => {
   try {
+    console.log(ipAddress);
     const token = await getToken(ipAddress);
     const flowJson = await generateFlow(flow, ipAddress);
     const response = await axios.post(`http://${ipAddress}:1880/flow`, flowJson, {

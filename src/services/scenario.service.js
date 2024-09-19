@@ -1,7 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const mysqlDb = require("../models/mysql");
 const CustomError = require("../utils/CustomError");
-const generateFlow = require("../node-red/generateFlow");
 const { createFlow, updateFlow, deleteFlow } = require("../node-red");
 
 const createScenario = async (data, userId) => {
@@ -31,15 +30,18 @@ const createScenario = async (data, userId) => {
     if (!gateway) {
       throw new CustomError("Gateway not found for user", 404);
     }
+    
+    const actionJson = await transformActions(data.actions);
 
     const scenarioJson = {
       id: scenario.id,
       name: scenario.name,
       isEnabled: scenario.isEnabled,
-      actions: transformActions(data.actions),
+      actions: actionJson,
       triggers: transformTriggers(data.triggers),
       conditions: transformConditions(data.conditions),
     };
+
     const res = await createFlow(gateway.ipAddress, scenarioJson);
 
     if (res.status === 200) await transaction.commit();
@@ -179,7 +181,7 @@ const updateScenario = async (scenarioId, data) => {
       id: updatedScenario.id,
       name: updatedScenario.name,
       isEnabled: updatedScenario.isEnabled,
-      actions: transformActions(data.actions),
+      actions: await transformActions(data.actions),
       triggers: transformTriggers(data.triggers),
       conditions: transformConditions(data.conditions),
     };
@@ -316,17 +318,34 @@ const processConditions = async (conditions, scenarioId, transaction) => {
 };
 
 const processActions = async (actions, scenarioId, transaction) => {
-  const actionPromises = actions.map((action) =>
-    mysqlDb.Action.upsert(
-      {
-        ...action,
-        scenarioId,
-      },
+
+  const existingActionLinks = await mysqlDb.ActionScenario.findAll({
+    where: { scenarioId: scenarioId },
+    attributes: ['actionId'],
+    transaction,
+  });
+
+  const existingActionIds = existingActionLinks.map(link => link.actionId);
+
+
+  const actionsToAdd = actions.filter(id => !existingActionIds.includes(id));
+  const actionsToRemove = existingActionIds.filter(id => !actions.includes(id));
+
+  const addPromises = actionsToAdd.map(actionId =>
+    mysqlDb.ActionScenario.create(
+      { actionId: actionId, scenarioId },
       { transaction }
     )
   );
 
-  await Promise.all(actionPromises);
+  const removePromises = actionsToRemove.map(actionId =>
+    mysqlDb.ActionScenario.destroy({
+      where: { actionId, scenarioId },
+      transaction,
+    })
+  );
+
+  await Promise.all([...addPromises, ...removePromises]);
 };
 
 const deleteScenario = async (scenarioId) => {
@@ -357,8 +376,7 @@ const deleteScenario = async (scenarioId) => {
 
     const res = await deleteFlow(gateway.ipAddress, scenarioId);
 
-    if (res.status === 204)
-      await scenario.destroy({ transaction });
+    if (res.status === 204) await scenario.destroy({ transaction });
 
     await transaction.commit();
     return { message: "Scenario deleted successfully" };
@@ -368,13 +386,20 @@ const deleteScenario = async (scenarioId) => {
   }
 };
 
-const transformActions = (actions) =>
-  actions.map((action) => ({
-    id: uuidv4(),
-    deviceId: action.deviceId,
-    property: action.property,
-    value: action.value,
-  }));
+const transformActions = async (actionIds) => {
+  try {
+
+    const actions = await mysqlDb.Action.findAll({
+      where: { id: actionIds },
+      attributes: {exclude: ['id', 'createdAt', 'updatedAt', "description"]}
+    });
+
+
+    return actions.map((action) => action.toJSON());
+  } catch (error) {
+    throw new Error(`Error transforming actions: ${error.message}`);
+  }
+}    
 
 const transformTriggers = (triggers) =>
   triggers.map((trigger) => ({
@@ -383,14 +408,14 @@ const transformTriggers = (triggers) =>
     detail:
       trigger.type === "device"
         ? {
-          deviceId: trigger.deviceId,
-          comparator: trigger.comparator,
-          deviceStatus: trigger.deviceStatus,
-        }
+            deviceId: trigger.deviceId,
+            comparator: trigger.comparator,
+            deviceStatus: trigger.deviceStatus,
+          }
         : {
-          startTime: trigger.startTime,
-          endTime: trigger.endTime,
-        },
+            startTime: trigger.startTime,
+            endTime: trigger.endTime,
+          },
   }));
 
 const transformConditions = (conditions) =>
@@ -400,14 +425,14 @@ const transformConditions = (conditions) =>
     detail:
       condition.type === "device"
         ? {
-          deviceId: condition.deviceId,
-          comparator: condition.comparator,
-          deviceStatus: condition.deviceStatus,
-        }
+            deviceId: condition.deviceId,
+            comparator: condition.comparator,
+            deviceStatus: condition.deviceStatus,
+          }
         : {
-          startTime: condition.startTime,
-          endTime: condition.endTime,
-        },
+            startTime: condition.startTime,
+            endTime: condition.endTime,
+          },
   }));
 
 module.exports = {

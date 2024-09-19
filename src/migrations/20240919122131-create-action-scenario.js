@@ -4,7 +4,7 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.createTable('action_scenarios', {
-      deviceId: {
+      actionId: {
         type: Sequelize.UUID,
         allowNull: false,
         references: {
