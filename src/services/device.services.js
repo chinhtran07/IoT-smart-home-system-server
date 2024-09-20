@@ -1,79 +1,63 @@
-const mysqlDb = require('../models/mysql');
-const mongoDb = require('../models/mongo');
+import mysqlDb from '../models/mysql/index.js';
+import mongoDb from '../models/mongo/index.js';
+import CustomError from '../utils/CustomError.js';
 
-const getAllDevices = async () => {
+export const getAllDevices = async () => {
   try {
     return await mysqlDb.Device.findAll();
   } catch (error) {
-    throw error;
+    throw new CustomError(error.message);
   }
 };
 
-
-const getDeviceById = async (id) => {
+export const getDeviceById = async (id) => {
   try {
     const device = await mysqlDb.Device.findByPk(id);
     if (!device) {
-      const error = new Error("Device not found");
-      error.status = 404;
-      throw error;
+      throw new CustomError("Device not found", 404);
     }
     return device;
   } catch (error) {
-    throw error;
+    throw new CustomError(error.message);
   }
 };
 
-const updateDevice = async (id, dataToUpdate) => {
-  try {
-      const device = await mysqlDb.Device.findByPk(id);
-
-      // Nếu thiết bị không tồn tại, ném lỗi
-      if (!device) {
-          const error = new Error("Device not found");
-          error.status = 404;
-          throw error;
-      }
-
-      const updatedDevice = await device.update(dataToUpdate);
-
-      return updatedDevice; 
-  } catch (error) {
-      throw error;
-  }
-};
-
-
-
-const deleteDevice = async (id) => {
+export const updateDevice = async (id, dataToUpdate) => {
   try {
     const device = await mysqlDb.Device.findByPk(id);
     if (!device) {
-      const error = new Error("Device not found");
-      error.status = 404;
-      throw error;
+      throw new CustomError("Device not found", 404);
+    }
+    const updatedDevice = await device.update(dataToUpdate);
+    return updatedDevice; 
+  } catch (error) {
+    throw new CustomError(error.message);
+  }
+};
+
+export const deleteDevice = async (id) => {
+  try {
+    const device = await mysqlDb.Device.findByPk(id);
+    if (!device) {
+      throw new CustomError("Device not found", 404);
     }
     await device.destroy();
     return { message: "Device deleted successfully" };
   } catch (error) {
-    throw error;
+    throw new CustomError(error.message);
   }
 };
 
-const getDevicesOwner = async (userId, page = 1, limit = 10) => {
+export const getDevicesOwner = async (userId, page = 1, limit = 10) => {
   try {
-    const gateways = await mysqlDb.Gateway.findAll({ userId: userId });
-
+    const gateways = await mysqlDb.Gateway.findAll({ where: { userId } });
     const gatewayIds = gateways.map(gateway => gateway.id);
-
     const offset = (page - 1) * limit;
 
     const { count, rows } = await mysqlDb.Device.findAndCountAll({
-      where: {
-        gatewayId: gatewayIds
-      },
-      limit: limit,
-      offset: offset,
+      where: { gatewayId: gatewayIds },
+      limit,
+      offset,
       attributes: ['id', 'name', 'type', 'status']
     });
 
@@ -84,18 +68,15 @@ const getDevicesOwner = async (userId, page = 1, limit = 10) => {
       currentPage: page
     };
   } catch (error) {
-    throw new Error(error.message);
+    throw new CustomError(error.message);
   }
 };
 
-const getDevicesByAccessControl = async (userId, page = 1, limit = 10) => {
+export const getDevicesByAccessControl = async (userId, page = 1, limit = 10) => {
   try {
     const accessControl = await mongoDb.AccessControl.findOne({ userId });
-
     if (!accessControl) {
-      const error = new Error("Access control not found for the user.");
-      error.status = 403;
-      throw error;
+      throw new CustomError("Access control not found for the user.", 403);
     }
 
     const deviceIds = accessControl.permissions
@@ -105,11 +86,9 @@ const getDevicesByAccessControl = async (userId, page = 1, limit = 10) => {
     const offset = (page - 1) * limit;
 
     const { count, rows } = await mysqlDb.Device.findAndCountAll({
-      where: {
-        id: deviceIds
-      },
-      limit: limit,
-      offset: offset,
+      where: { id: deviceIds },
+      limit,
+      offset,
     });
 
     return {
@@ -119,11 +98,11 @@ const getDevicesByAccessControl = async (userId, page = 1, limit = 10) => {
       currentPage: page
     };
   } catch (error) {
-    throw new Error(error.message);
+    throw new CustomError(error.message);
   }
 };
 
-module.exports = {
+export default {
   getAllDevices,
   getDeviceById,
   updateDevice,

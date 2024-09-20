@@ -1,10 +1,10 @@
-const groupService = require('../services/group.services');
-const redisClient = require('../config/redis.config'); // Import Redis client
-const CustomError = require('../utils/CustomError');
+import groupService from '../services/group.services.js';
+import redisClient from '../config/redis.config.js'; // Import Redis client
+import CustomError from '../utils/CustomError.js';
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
-const addGroup = async (req, res, next) => {
+export const addGroup = async (req, res, next) => {
     try {
         const userId = req.user._id;
         const { name, type } = req.body;
@@ -19,7 +19,7 @@ const addGroup = async (req, res, next) => {
     }
 };
 
-const addDeviceToGroup = async (req, res, next) => {
+export const addDeviceToGroup = async (req, res, next) => {
     try {
         const groupId = req.params.id;
         const { deviceIds } = req.body;
@@ -34,7 +34,7 @@ const addDeviceToGroup = async (req, res, next) => {
     }
 };
 
-const removeDevicesFromGroup = async (req, res, next) => {
+export const removeDevicesFromGroup = async (req, res, next) => {
     try {
         const groupId = req.params.id;
         const { deviceIds } = req.body;
@@ -49,7 +49,7 @@ const removeDevicesFromGroup = async (req, res, next) => {
     }
 };
 
-const getAllGroups = async (req, res, next) => {
+export const getAllGroups = async (req, res, next) => {
     try {
         const userId = req.user._id;
         const cacheKey = `groupsByUser:${userId}`;
@@ -72,7 +72,7 @@ const getAllGroups = async (req, res, next) => {
     }
 };
 
-const getGroupById = async (req, res, next) => {
+export const getGroupById = async (req, res, next) => {
     try {
         const groupId = req.params.id;
         const cacheKey = `group:${groupId}`;
@@ -98,7 +98,7 @@ const getGroupById = async (req, res, next) => {
     }
 };
 
-const getGroupsByAccessControl = async (req, res, next) => {
+export const getGroupsByAccessControl = async (req, res, next) => {
     try {
         const userId = req.body.userId;
         const cacheKey = `groupsByAccessControl:${userId}`;
@@ -121,7 +121,7 @@ const getGroupsByAccessControl = async (req, res, next) => {
     }
 };
 
-const updateGroup = async (req, res, next) => {
+export const updateGroup = async (req, res, next) => {
     try {
         const groupId = req.params.id;
         const updateData = req.body;
@@ -136,7 +136,7 @@ const updateGroup = async (req, res, next) => {
     }
 };
 
-const deleteGroup = async (req, res, next) => {
+export const deleteGroup = async (req, res, next) => {
     try {
         const groupId = req.params.id;
         await groupService.deleteGroup(groupId);
@@ -148,15 +148,4 @@ const deleteGroup = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
-
-module.exports = {
-    addGroup,
-    addDeviceToGroup,
-    removeDevicesFromGroup,
-    getAllGroups,
-    getGroupById,
-    getGroupsByAccessControl,
-    updateGroup,
-    deleteGroup
 };

@@ -1,9 +1,9 @@
-const config = require("../config");
-const db = require("../models/mysql");
-const jwt = require("jsonwebtoken");
-const CustomError = require("../utils/CustomError");
+import config from "../config/index.js";
+import db from "../models/mysql/index.js";
+import jwt from "jsonwebtoken";
+import CustomError from "../utils/CustomError.js";
 
-const registerUser = async (
+export const registerUser = async (
   username,
   password,
   firstName,
@@ -27,7 +27,7 @@ const registerUser = async (
   }
 };
 
-const loginUser = async (email, password) => {
+export const loginUser = async (email, password) => {
   try {
     const user = await db.User.findOne({ where: { email: email } });
     if (!user) throw new Error("Invalid username or password");
@@ -43,7 +43,7 @@ const loginUser = async (email, password) => {
   }
 };
 
-const refreshAccessToken = async (refreshToken) => {
+export const refreshAccessToken = async (refreshToken) => {
   if (!refreshToken) {
     throw new CustomError("Refresh token is required", 400);
   }
@@ -62,5 +62,3 @@ const refreshAccessToken = async (refreshToken) => {
 
   return newTokens;
 };
-
-module.exports = { registerUser, loginUser, refreshAccessToken };

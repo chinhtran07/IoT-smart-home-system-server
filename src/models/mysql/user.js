@@ -1,8 +1,8 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const config = require('../../config');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import config from '../../config/index.js';
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   const User = sequelize.define(
     "User",
     {
@@ -89,7 +89,7 @@ module.exports = (sequelize, DataTypes) => {
     this.refreshToken = refreshToken;
     await this.save();
 
-    return {token, refreshToken};
+    return { token, refreshToken };
   };
 
   return User;

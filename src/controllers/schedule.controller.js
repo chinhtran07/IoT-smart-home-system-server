@@ -1,23 +1,23 @@
-const scheduleService = require('../services/schedule.services');
-const redisClient = require('../config/redis.config'); // Import Redis client
-const CustomError = require('../utils/CustomError');
+import * as scheduleService from '../services/schedule.services.js';
+import redisClient from '../config/redis.config.js'; // Import Redis client
+import CustomError from '../utils/CustomError.js';
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
-const createSchedule = async (req, res, next) => {
+export const createSchedule = async (req, res, next) => {
   try {
     const schedule = await scheduleService.createSchedule(req.body);
     
     // Clear all schedules cache for the user
     await redisClient.del(`schedulesByUser:${req.user._id}`);
     
-    res.status(201).json(schedule);
+    res.status(201).json(schedule);s
   } catch (error) {
     next(error);
   }
 };
 
-const getAllSchedules = async (req, res, next) => {
+export const getAllSchedules = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const cacheKey = `schedulesByUser:${userId}`;
@@ -40,7 +40,7 @@ const getAllSchedules = async (req, res, next) => {
   }
 };
 
-const getScheduleById = async (req, res, next) => {
+export const getScheduleById = async (req, res, next) => {
   const { id } = req.params;
   const cacheKey = `schedule:${id}`;
   
@@ -66,7 +66,7 @@ const getScheduleById = async (req, res, next) => {
   }
 };
 
-const updateSchedule = async (req, res, next) => {
+export const updateSchedule = async (req, res, next) => {
   const { id } = req.params;
   
   try {
@@ -84,7 +84,7 @@ const updateSchedule = async (req, res, next) => {
   }
 };
 
-const deleteSchedule = async (req, res, next) => {
+export const deleteSchedule = async (req, res, next) => {
   const { id } = req.params;
   
   try {
@@ -100,12 +100,4 @@ const deleteSchedule = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-module.exports = {
-  createSchedule,
-  getAllSchedules,
-  getScheduleById,
-  updateSchedule,
-  deleteSchedule
 };

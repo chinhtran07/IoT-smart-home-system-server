@@ -1,5 +1,5 @@
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const Device = sequelize.define("Device", {
         id: {
             type: DataTypes.UUID,

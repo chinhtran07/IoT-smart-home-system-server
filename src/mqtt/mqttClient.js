@@ -1,8 +1,8 @@
-const mqtt = require("mqtt");
-const myEmitter = require("../events/eventsEmitter");
-const mysqlDb = require("../models/mysql");
-const mongoDb = require("../models/mongo");
-const redisClient = require("../config/redis.config");
+import mqtt from "mqtt";
+import myEmitter from "../events/eventsEmitter.js";
+import mysqlDb from "../models/mysql/index.js";
+import mongoDb from "../models/mongo/index.js";
+import redisClient from "../config/redis.config.js";
 
 const clients = {};
 
@@ -108,7 +108,7 @@ const connectToGateway = async (gateway) => {
   });
 };
 
-module.exports = {
+export {
   clients,
   connectToGateway,
 };

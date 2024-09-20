@@ -1,10 +1,10 @@
-const deviceService = require('../services/device.services'); 
-const redisClient = require('../config/redis.config'); // Import Redis client
-const CustomError = require('../utils/CustomError');
+import * as deviceService from '../services/device.services.js'; 
+import redisClient from '../config/redis.config.js'; // Import Redis client
+import CustomError from '../utils/CustomError.js';
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
-const getAllDevices = async (req, res, next) => {
+export const getAllDevices = async (req, res, next) => {
     try {
         const cacheKey = 'allDevices';
 
@@ -26,7 +26,7 @@ const getAllDevices = async (req, res, next) => {
     }
 };
 
-const getDeviceById = async (req, res, next) => {
+export const getDeviceById = async (req, res, next) => {
     try {
         const deviceId = req.params.id;
         const cacheKey = `device:${deviceId}`;
@@ -52,7 +52,7 @@ const getDeviceById = async (req, res, next) => {
     }
 };
 
-const updateDevice = async (req, res, next) => {
+export const updateDevice = async (req, res, next) => {
     try {
         const deviceId = req.params.id;
         const dataToUpdate = req.body;
@@ -75,7 +75,7 @@ const updateDevice = async (req, res, next) => {
     }
 };
 
-const deleteDevice = async (req, res, next) => {
+export const deleteDevice = async (req, res, next) => {
     try {
         const deviceId = req.params.id;
         await deviceService.deleteDevice(deviceId);
@@ -89,7 +89,7 @@ const deleteDevice = async (req, res, next) => {
     }
 };
 
-const getDevicesOwner = async (req, res, next) => {
+export const getDevicesOwner = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const page = req.query.page || 1;
@@ -114,7 +114,7 @@ const getDevicesOwner = async (req, res, next) => {
     }
 };
 
-const getDevicesByAccessControl = async (req, res, next) => {
+export const getDevicesByAccessControl = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const page = req.query.page || 1;
@@ -137,13 +137,4 @@ const getDevicesByAccessControl = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
-
-module.exports = {
-    getAllDevices,
-    getDeviceById,
-    updateDevice,
-    deleteDevice,
-    getDevicesOwner,
-    getDevicesByAccessControl
 };

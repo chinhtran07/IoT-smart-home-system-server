@@ -1,6 +1,6 @@
-const mysqlDb = require('../models/mysql');
-const redisClient = require('../config/redis.config'); 
-const myEmitter = require('../events/eventsEmitter');
+import mysqlDb from '../models/mysql/index.js';
+import redisClient from '../config/redis.config.js'; 
+import myEmitter from '../events/eventsEmitter.js';
 
 const checkHeartbeat = async () => {
     try {
@@ -54,8 +54,6 @@ const checkHeartbeat = async () => {
     }
 };
 
-const startService = () => {
+export const startService = () => {
     setInterval(checkHeartbeat, 60000);
 };
-
-module.exports = startService;

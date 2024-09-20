@@ -1,5 +1,5 @@
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const TimeCondition = sequelize.define('TimeCondition', {
         id: {
             type: DataTypes.UUID,

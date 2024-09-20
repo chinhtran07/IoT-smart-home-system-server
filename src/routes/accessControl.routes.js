@@ -1,11 +1,14 @@
-const express = require("express");
+// accessControlRoutes.js
+import express from 'express';
+import { grantPermission, getAccessControl, updateAccessControl, getGrantedUsersByOwner, deleteAccessControl } from '../controllers/accessControl.controller.js';
+
 const router = express.Router();
-const accessControlController = require("../controllers/accessControl.controller");
 
-router.post("/grant", accessControlController.grantPermission);
-router.get("/:userId", accessControlController.getAccessControl);
-router.get("", accessControlController.getGrantedUsersByOwner);
-router.put("/grant/:userId", accessControlController.updateAccessControl);
-router.delete("/revoke", accessControlController.deleteAccessControl);
+// Routes for access control
+router.post('/grant', grantPermission);
+router.get('/:userId', getAccessControl);
+router.get('/', getGrantedUsersByOwner);
+router.put('/grant/:userId', updateAccessControl);
+router.delete('/revoke', deleteAccessControl);
 
-module.exports = router;
+export default router;

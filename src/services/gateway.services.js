@@ -1,7 +1,8 @@
-const mysqlDB = require("../models/mysql");
-const mongoDb = require("../models/mongo");
+import mysqlDB from "../models/mysql/index.js";
+import mongoDb from "../models/mongo/index.js";
+import CustomError from "../utils/CustomError.js";
 
-const createGateway = async (gatewayData, userId) => {
+export const createGateway = async (gatewayData, userId) => {
   try {
     const { name, macAddress, ipAddress, status } = gatewayData;
 
@@ -15,21 +16,21 @@ const createGateway = async (gatewayData, userId) => {
 
     return newGateway;
   } catch (error) {
-    throw new Error(error.message);
+    throw new CustomError(error.message);
   }
 };
 
-const addDevice = async (deviceData, gatewayId, userId) => {
+export const addDevice = async (deviceData, gatewayId, userId) => {
   const transaction = await mysqlDB.sequelize.transaction();
   try {
     const gateway = await mysqlDB.Gateway.findByPk(gatewayId, { transaction });
     if (!gateway) {
-      throw new Error("Gateway not found");
+      throw new CustomError("Gateway not found", 404);
     }
 
     const { type, name, macAddress, topics, detail, actions } = deviceData;
     if (!["actuator", "sensor"].includes(type)) {
-      throw new Error("Invalid device type");
+      throw new CustomError("Invalid device type", 400);
     }
 
     const existingDevice = await mysqlDB.Device.findOne({
@@ -37,7 +38,7 @@ const addDevice = async (deviceData, gatewayId, userId) => {
       transaction,
     });
     if (existingDevice) {
-      throw new Error("Device with this MAC address already exists");
+      throw new CustomError("Device with this MAC address already exists", 409);
     }
 
     const newDevice = await mysqlDB.Device.create(
@@ -96,48 +97,44 @@ const addDevice = async (deviceData, gatewayId, userId) => {
     return newDevice;
   } catch (error) {
     await transaction.rollback();
-    throw new Error(error.message);
+    throw new CustomError(error.message);
   }
 };
 
-const getGatewayById = async (id) => {
+export const getGatewayById = async (id) => {
   try {
     const gateway = await mysqlDB.Gateway.findByPk(id, {
       attributes: ["id", "name", "status"],
     });
     if (!gateway) {
-      const error = new Error("Not found");
-      error.status = 404;
-      throw error;
+      throw new CustomError("Not found", 404);
     }
 
     return gateway;
   } catch (error) {
-    throw new Error(error.message);
+    throw new CustomError(error.message);
   }
 };
 
-const getGatewayByUser = async (userId) => {
+export const getGatewayByUser = async (userId) => {
   try {
-    const gateways = await mysqlDB.Gateway.findOne(
-      { userId: userId },
+    const gateways = await mysqlDB.Gateway.findAll(
+      { where: { userId } },
       {
         attributes: ["id", "name", "status"],
       }
     );
-    if (!gateways) {
-      let error = new Error();
-      error.status = 404;
-      throw error;
+    if (!gateways.length) {
+      throw new CustomError("No gateways found for this user", 404);
     }
 
     return gateways;
   } catch (error) {
-    throw new Error(error.message);
+    throw new CustomError(error.message);
   }
 };
 
-module.exports = {
+export default {
   createGateway,
   addDevice,
   getGatewayById,

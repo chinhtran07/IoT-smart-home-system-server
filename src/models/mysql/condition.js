@@ -1,5 +1,5 @@
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const Condition = sequelize.define('Condition', {
         id: {
             type: DataTypes.UUID,

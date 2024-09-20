@@ -1,5 +1,5 @@
-const { connectToGateway, clients } = require('./mqttClient');
-const mysqlDb = require('../models/mysql');
+import { connectToGateway, clients } from './mqttClient.js';
+import mysqlDb from '../models/mysql/index.js';
 
 const connectToGateways = async (gatewayIds = []) => {
     try {
@@ -28,7 +28,7 @@ const onDeviceCreated = async (device) => {
     }
 };
 
-module.exports = {
+export {
     connectToGateways,
     onGatewayCreated,
     onDeviceCreated,

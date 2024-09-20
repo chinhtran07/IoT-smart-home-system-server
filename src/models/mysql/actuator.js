@@ -1,4 +1,4 @@
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const Actuator = sequelize.define('Actuator', {
         id: {
             type: DataTypes.UUID,

@@ -1,8 +1,8 @@
-const myEmitter = require("../events/eventsEmitter");
-const mongoDB = require("../models/mongo");
-const mysqlDb = require("../models/mysql");
+import myEmitter from "../events/eventsEmitter.js";
+import mongoDB from "../models/mongo/index.js";
+import mysqlDb from "../models/mysql/index.js";
 
-const initSocket = async (io) => {
+export const initSocket = async (io) => {
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
@@ -69,5 +69,3 @@ const initSocket = async (io) => {
     myEmitter.on("heartbeat", handleHeartbeat);
   });
 };
-
-module.exports = { initSocket };

@@ -1,10 +1,9 @@
-const mysqlDb = require("../models/mysql");
-const mongoDb = require("../models/mongo");
-const CustomError = require("../utils/CustomError");
-const myEmitter = require("../events/eventsEmitter");
-const { publishControlMessage } = require("../mqtt/mqttControl");
+import mysqlDb from "../models/mysql/index.js";
+import mongoDb from "../models/mongo/index.js";
+import CustomError from "../utils/CustomError.js";
+import { publishControlMessage } from "../mqtt/mqttControl.js";
 
-const controlDevice = async (deviceId, command) => {
+export const controlDevice = async (deviceId, command) => {
   try {
     const device = await mysqlDb.Device.findByPk(deviceId, {
       attributes: ["gatewayId"],
@@ -46,16 +45,15 @@ const controlDevice = async (deviceId, command) => {
       }
     }
 
-      
     if (hasChanges) {
       await actuator.update({ properties: updatedProperties });
     }
-      
+    
   } catch (error) {
     throw error;
   }
 };
 
-module.exports = {
+export default {
   controlDevice,
 };

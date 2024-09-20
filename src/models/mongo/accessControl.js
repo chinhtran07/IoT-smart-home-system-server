@@ -1,4 +1,4 @@
-module.exports = (mongoose) => {
+export default (mongoose) => {
   const accessControlSchema = new mongoose.Schema(
     {
       owner: {
@@ -27,4 +27,4 @@ module.exports = (mongoose) => {
   const AccessControl = mongoose.model("AccessControl", accessControlSchema);
 
   return AccessControl;
-}
+};

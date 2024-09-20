@@ -1,9 +1,13 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
+import createTopicModel from './topic.js';
+import createAccessControlModel from './accessControl.js';
+import createSensorDataModel from './sensorData.js';
+import createLogModel from './log.js';
 
 const db = {};
-db.Topic = require('./topic')(mongoose);
-db.AccessControl = require('./accessControl')(mongoose);
-db.SensorData = require('./sensorData')(mongoose);
-db.Log = require('./log')(mongoose);
+db.Topic = createTopicModel(mongoose);
+db.AccessControl = createAccessControlModel(mongoose);
+db.SensorData = createSensorDataModel(mongoose);
+db.Log = createLogModel(mongoose);
 
-module.exports = db;
+export default db;

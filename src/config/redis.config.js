@@ -1,4 +1,4 @@
-const redis = require('redis');
+import redis from 'redis';
 
 const client = redis.createClient({
     url: "redis://localhost:6379"         
@@ -17,4 +17,4 @@ client.on('error', (err) => {
     console.error('Redis error:', err);
 });
 
-module.exports = client;
+export default client;

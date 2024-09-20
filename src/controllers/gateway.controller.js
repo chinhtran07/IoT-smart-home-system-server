@@ -1,10 +1,10 @@
-const gatewayService = require('../services/gateway.services');
-const redisClient = require('../config/redis.config'); // Import Redis client
-const CustomError = require('../utils/CustomError');
+import gatewayService from '../services/gateway.services.js';
+import redisClient from '../config/redis.config.js'; // Import Redis client
+import CustomError from '../utils/CustomError.js';
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
-const createGateway = async (req, res, next) => {
+export const createGateway = async (req, res, next) => {
     try {
         const gatewayData = req.body;
         console.info(gatewayData);
@@ -19,7 +19,7 @@ const createGateway = async (req, res, next) => {
     }
 };
 
-const addDevice = async (req, res, next) => {
+export const addDevice = async (req, res, next) => {
     try {
         const deviceData = req.body;
         const device = await gatewayService.addDevice(deviceData, req.params.id, req.user._id);
@@ -33,7 +33,7 @@ const addDevice = async (req, res, next) => {
     }
 };
 
-const getGatewayById = async (req, res, next) => {
+export const getGatewayById = async (req, res, next) => {
     try {
         const id = req.params.id;
         const cacheKey = `gateway:${id}`;
@@ -59,7 +59,7 @@ const getGatewayById = async (req, res, next) => {
     }
 };
 
-const getGatewaysByUser = async (req, res, next) => {
+export const getGatewaysByUser = async (req, res, next) => {
     try {
         const userId = req.user.id;
         const cacheKey = `gatewaysByUser:${userId}`;
@@ -80,11 +80,4 @@ const getGatewaysByUser = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
-
-module.exports = {
-    createGateway,
-    addDevice,
-    getGatewayById,
-    getGatewaysByUser
 };

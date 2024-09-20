@@ -1,10 +1,10 @@
-const { getGatewayByUser } = require("../services/gateway.services");
-const scenarioService = require("../services/scenario.service");
-const redisClient = require('../config/redis.config'); // Import Redis client
+import { getGatewayByUser } from "../services/gateway.services.js";
+import * as scenarioService from "../services/scenario.service.js";
+import redisClient from '../config/redis.config.js'; // Import Redis client
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
-const createAutomationScenario = async (req, res, next) => {
+export const createAutomationScenario = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const scenario = await scenarioService.createScenario(req.body, userId);
@@ -18,7 +18,7 @@ const createAutomationScenario = async (req, res, next) => {
   }
 };
 
-const updateAutomationScenario = async (req, res, next) => {
+export const updateAutomationScenario = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const scenarioId = req.params.id;
@@ -40,7 +40,7 @@ const updateAutomationScenario = async (req, res, next) => {
   }
 };
 
-const getScenariosByUser = async (req, res, next) => {
+export const getScenariosByUser = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const cacheKey = `scenariosByUser:${userId}`;
@@ -63,7 +63,7 @@ const getScenariosByUser = async (req, res, next) => {
   }
 };
 
-const getScenarioById = async (req, res, next) => {
+export const getScenarioById = async (req, res, next) => {
   try {
     const id = req.params.id;
     const cacheKey = `scenario:${id}`;
@@ -89,12 +89,12 @@ const getScenarioById = async (req, res, next) => {
   }
 };
 
-const deleteScenario = async (req, res, next) => {
+export const deleteScenario = async (req, res, next) => {
   try {
     const id = req.params.id;
     const userId = req.user._id;
     
-    const message = await scenarioService.deleteScenario(id);
+    await scenarioService.deleteScenario(id);
     
     // Clear cache for the specific scenario
     await redisClient.del(`scenario:${id}`);
@@ -102,16 +102,8 @@ const deleteScenario = async (req, res, next) => {
     // Clear cache for the user's scenarios
     await redisClient.del(`scenariosByUser:${userId}`);
     
-    res.status(204).json(message);
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }
-};
-
-module.exports = {
-  createAutomationScenario,
-  updateAutomationScenario,
-  getScenarioById,
-  getScenariosByUser,
-  deleteScenario
 };

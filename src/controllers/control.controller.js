@@ -1,6 +1,6 @@
-const controlService = require('../services/control.service');
+import controlService from '../services/control.service.js';
 
-const controlDevice = async(req, res, next) => {
+export const controlDevice = async(req, res, next) => {
     try {
         const { deviceId, command } = req.body;
         await controlService.controlDevice(deviceId, command);
@@ -8,8 +8,4 @@ const controlDevice = async(req, res, next) => {
     } catch (error) {
         next(error);
     }
-}
-
-module.exports = {
-    controlDevice
 }

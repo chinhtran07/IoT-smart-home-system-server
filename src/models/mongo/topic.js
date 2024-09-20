@@ -1,4 +1,4 @@
-module.exports = (mongoose) => {
+export default (mongoose) => {
     const topicSchema = new mongoose.Schema({
         deviceId: { type: String, required: true, unique: true },
         topics: {

@@ -1,18 +1,17 @@
-const mysqlDb = require('../models/mysql');
-const mongoDb = require('../models/mongo');
-const CustomError = require('../utils/CustomError');
+import mysqlDb from '../models/mysql/index.js';
+import mongoDb from '../models/mongo/index.js';
+import CustomError from '../utils/CustomError.js';
 
-
-const addGroup = async (name, userId, type) => {
+export const addGroup = async (name, userId, type) => {
     try {
         const newGroup = await mysqlDb.Group.create({ name, userId, type });
         return newGroup;
     } catch (error) {
-        throw new Error(`Error creating group: ${error.message}`);
+        throw new CustomError(`Error creating group: ${error.message}`);
     }
 };
 
-const addDeviceToGroup = async (groupId, deviceIds) => {
+export const addDeviceToGroup = async (groupId, deviceIds) => {
     try {
         const group = await mysqlDb.Group.findByPk(groupId);
         if (!group) {
@@ -25,11 +24,10 @@ const addDeviceToGroup = async (groupId, deviceIds) => {
         });
 
         const existingDeviceIds = existingDevices.map(entry => entry.deviceId);
-
         const newDeviceIds = deviceIds.filter(deviceId => !existingDeviceIds.includes(deviceId));
 
         if (newDeviceIds.length === 0) {
-            throw new CustomError('All devices are already in the group');
+            throw new CustomError('All devices are already in the group', 409);
         }
 
         await mysqlDb.DeviceGroup.bulkCreate(
@@ -39,11 +37,11 @@ const addDeviceToGroup = async (groupId, deviceIds) => {
 
         return group;
     } catch (error) {
-        throw new Error(`Error adding devices to group: ${error.message}`);
+        throw new CustomError(`Error adding devices to group: ${error.message}`);
     }
 };
 
-const removeDevicesFromGroup = async (groupId, deviceIds) => {
+export const removeDevicesFromGroup = async (groupId, deviceIds) => {
     try {
         const group = await mysqlDb.Group.findByPk(groupId);
         if (!group) {
@@ -59,29 +57,33 @@ const removeDevicesFromGroup = async (groupId, deviceIds) => {
 
         return group;
     } catch (error) {
-        throw new Error(`Error removing devices from group: ${error.message}`);
+        throw new CustomError(`Error removing devices from group: ${error.message}`);
     }
 };
 
-const getAllGroups = async (userId) => {
+export const getAllGroups = async (userId) => {
     try {
         return await mysqlDb.Group.findAll({
             where: { userId }
         });
     } catch (error) {
-        throw new Error(`Error fetching groups: ${error.message}`);
+        throw new CustomError(`Error fetching groups: ${error.message}`);
     }
 };
 
-const getGroupById = async (groupId) => {
+export const getGroupById = async (groupId) => {
     try {
-        return await mysqlDb.Group.findByPk(groupId);
+        const group = await mysqlDb.Group.findByPk(groupId);
+        if (!group) {
+            throw new CustomError("Group not found", 404);
+        }
+        return group;
     } catch (error) {
-        throw new Error(`Error fetching group by ID: ${error.message}`);
+        throw new CustomError(`Error fetching group by ID: ${error.message}`);
     }
 };
 
-const updateGroup = async (groupId, updateData) => {
+export const updateGroup = async (groupId, updateData) => {
     try {
         const [updated] = await mysqlDb.Group.update(updateData, {
             where: { id: groupId },
@@ -92,29 +94,30 @@ const updateGroup = async (groupId, updateData) => {
 
         return updated[0];
     } catch (error) {
-        throw new Error(`Error updating group: ${error.message}`);
+        throw new CustomError(`Error updating group: ${error.message}`);
     }
 };
 
-
-const deleteGroup = async (groupId) => {
+export const deleteGroup = async (groupId) => {
     try {
-        return await mysqlDb.Group.destroy({
+        const deleted = await mysqlDb.Group.destroy({
             where: { id: groupId }
         });
+        if (!deleted) {
+            throw new CustomError("Group not found", 404);
+        }
+        return { message: "Group deleted successfully" };
     } catch (error) {
-        throw new Error(`Error deleting group: ${error.message}`);
+        throw new CustomError(`Error deleting group: ${error.message}`);
     }
 };
 
-const getGroupsByAccessControl = async (userId) => {
+export const getGroupsByAccessControl = async (userId) => {
     try {
         const accessControl = await mongoDb.AccessControl.findOne({ userId });
 
         if (!accessControl) {
-            const error = new Error('Access Control not found');
-            error.status = 404;
-            throw error;
+            throw new CustomError('Access Control not found', 404);
         }
 
         const groupIds = accessControl.permissions
@@ -129,12 +132,11 @@ const getGroupsByAccessControl = async (userId) => {
 
         return groups;
     } catch (error) {
-        throw new Error(`Error fetching groups by access control: ${error.message}`);
+        throw new CustomError(`Error fetching groups by access control: ${error.message}`);
     }
 };
 
-
-module.exports = {
+export default {
     addGroup,
     addDeviceToGroup,
     getAllGroups,
@@ -143,4 +145,4 @@ module.exports = {
     deleteGroup,
     removeDevicesFromGroup,
     getGroupsByAccessControl
-}
+};

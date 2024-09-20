@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require("uuid");
-const mysqlDb = require("../models/mysql");
-const CustomError = require("../utils/CustomError");
-const { createFlow, updateFlow, deleteFlow } = require("../node-red");
+import {v4 as uuidv4} from "uuid";
+import mysqlDb from "../models/mysql/index.js";
+import CustomError from "../utils/CustomError.js";
+import { createFlow, updateFlow, deleteFlow } from "../node-red/index.js";
 
-const createScenario = async (data, userId) => {
+export const createScenario = async (data, userId) => {
   const transaction = await mysqlDb.sequelize.transaction();
 
   try {
@@ -30,7 +30,7 @@ const createScenario = async (data, userId) => {
     if (!gateway) {
       throw new CustomError("Gateway not found for user", 404);
     }
-    
+
     const actionJson = await transformActions(data.actions);
 
     const scenarioJson = {
@@ -53,7 +53,7 @@ const createScenario = async (data, userId) => {
   }
 };
 
-const getScenarioById = async (scenarioId) => {
+export const getScenarioById = async (scenarioId) => {
   try {
     const scenario = await mysqlDb.Scenario.findByPk(scenarioId, {
       include: [
@@ -132,7 +132,7 @@ const getScenarioById = async (scenarioId) => {
   }
 };
 
-const getScenariosByUser = async (userId) => {
+export const getScenariosByUser = async (userId) => {
   try {
     return await mysqlDb.Scenario.findAll({
       where: { userId },
@@ -143,7 +143,7 @@ const getScenariosByUser = async (userId) => {
   }
 };
 
-const updateScenario = async (scenarioId, data) => {
+export const updateScenario = async (scenarioId, data) => {
   const transaction = await mysqlDb.sequelize.transaction();
 
   try {
@@ -318,27 +318,27 @@ const processConditions = async (conditions, scenarioId, transaction) => {
 };
 
 const processActions = async (actions, scenarioId, transaction) => {
-
   const existingActionLinks = await mysqlDb.ActionScenario.findAll({
     where: { scenarioId: scenarioId },
-    attributes: ['actionId'],
+    attributes: ["actionId"],
     transaction,
   });
 
-  const existingActionIds = existingActionLinks.map(link => link.actionId);
+  const existingActionIds = existingActionLinks.map((link) => link.actionId);
 
+  const actionsToAdd = actions.filter((id) => !existingActionIds.includes(id));
+  const actionsToRemove = existingActionIds.filter(
+    (id) => !actions.includes(id)
+  );
 
-  const actionsToAdd = actions.filter(id => !existingActionIds.includes(id));
-  const actionsToRemove = existingActionIds.filter(id => !actions.includes(id));
-
-  const addPromises = actionsToAdd.map(actionId =>
+  const addPromises = actionsToAdd.map((actionId) =>
     mysqlDb.ActionScenario.create(
       { actionId: actionId, scenarioId },
       { transaction }
     )
   );
 
-  const removePromises = actionsToRemove.map(actionId =>
+  const removePromises = actionsToRemove.map((actionId) =>
     mysqlDb.ActionScenario.destroy({
       where: { actionId, scenarioId },
       transaction,
@@ -348,7 +348,7 @@ const processActions = async (actions, scenarioId, transaction) => {
   await Promise.all([...addPromises, ...removePromises]);
 };
 
-const deleteScenario = async (scenarioId) => {
+export const deleteScenario = async (scenarioId) => {
   const transaction = await mysqlDb.sequelize.transaction();
 
   try {
@@ -388,22 +388,20 @@ const deleteScenario = async (scenarioId) => {
 
 const transformActions = async (actionIds) => {
   try {
-
     const actions = await mysqlDb.Action.findAll({
       where: { id: actionIds },
-      attributes: {exclude: ['id', 'createdAt', 'updatedAt', "description"]}
+      attributes: { exclude: ["id", "createdAt", "updatedAt", "description"] },
     });
-
 
     return actions.map((action) => action.toJSON());
   } catch (error) {
     throw new Error(`Error transforming actions: ${error.message}`);
   }
-}    
+};
 
 const transformTriggers = (triggers) =>
   triggers.map((trigger) => ({
-    id: uuidv4(),
+    id: v4(),
     type: trigger.type,
     detail:
       trigger.type === "device"
@@ -420,7 +418,7 @@ const transformTriggers = (triggers) =>
 
 const transformConditions = (conditions) =>
   conditions.map((condition) => ({
-    id: uuidv4(),
+    id: v4(),
     type: condition.type,
     detail:
       condition.type === "device"
@@ -434,11 +432,3 @@ const transformConditions = (conditions) =>
             endTime: condition.endTime,
           },
   }));
-
-module.exports = {
-  createScenario,
-  getScenarioById,
-  getScenariosByUser,
-  updateScenario,
-  deleteScenario,
-};
