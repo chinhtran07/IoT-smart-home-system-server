@@ -401,7 +401,7 @@ const transformActions = async (actionIds) => {
 
 const transformTriggers = (triggers) =>
   triggers.map((trigger) => ({
-    id: v4(),
+    id: uuidv4(),
     type: trigger.type,
     detail:
       trigger.type === "device"
@@ -418,7 +418,7 @@ const transformTriggers = (triggers) =>
 
 const transformConditions = (conditions) =>
   conditions.map((condition) => ({
-    id: v4(),
+    id: uuidv4(),
     type: condition.type,
     detail:
       condition.type === "device"

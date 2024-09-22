@@ -25,7 +25,7 @@ export default (Sequelize, DataTypes) => {
         },
         isActive: {
             type: DataTypes.BOOLEAN,
-            defaultValue: true,
+            defaultValue: false,
         },
     }, {
         tableName: 'scenes',
