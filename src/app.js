@@ -1,33 +1,39 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const bodyParser = require("body-parser");
-const authMiddleware = require("./middlewares/auth.middleware");
-const swaggerUi = require("swagger-ui-express");
-const swaggerSpec = require("./config/swaggerConfig");
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import bodyParser from "body-parser";
+import swaggerUi from "swagger-ui-express";
+import {swaggerSpec} from "./config/swaggerConfig.js";
+import * as authMiddleware from "./middlewares/auth.middleware.js";
+import errorMiddleware from "./middlewares/error.middleware.js";
+import authRoutes from "./routes/auth.routes.js";
+import apiRoutes from "./routes/index.js";
+import { adminJs, router, sessionMiddleware } from './admin/admin.js'; // Import AdminJS
 
 const app = express();
 
+app.use(sessionMiddleware);
+app.use(adminJs.options.rootPath, router);
 
-
-//secure
+// Secure
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// Swagger documentation
+app.use(express.static('public'));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-app.use("/api/auth", require("./routes/auth.routes"));
 
-//middleware
-app.use(authMiddleware.authenticate);
+// Auth routes
+app.use("/api/auth", authRoutes);
 
-//routes
-app.use('/api', require('./routes'));
+// API routes
+app.use("/api", authMiddleware.authenticate ,apiRoutes);
 
-//error handler middleware
-app.use(require("./middlewares/error.middleware"));
+app.use(errorMiddleware);
 
-module.exports = app;
+
+export { app };

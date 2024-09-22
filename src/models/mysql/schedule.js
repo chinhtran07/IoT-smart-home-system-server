@@ -1,5 +1,5 @@
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const Schedule = sequelize.define('Schedule', {
         id: {
             type: DataTypes.UUID,
@@ -17,18 +17,6 @@ module.exports = (sequelize, DataTypes) => {
         type: {
             type: DataTypes.ENUM('one-time', 'recurring'),
             allowNull: false,
-        },
-        interval: {
-            type: DataTypes.ENUM('daily', 'weekly', 'monthly'),
-            allowNull: true,
-        },
-        daysOfWeek: {
-            type: DataTypes.JSON,
-            allowNull: true,
-        },
-        timeOfDay: {
-            type: DataTypes.STRING,
-            allowNull: true,
         },
         enabled: {
             type: DataTypes.BOOLEAN,

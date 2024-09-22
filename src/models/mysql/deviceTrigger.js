@@ -1,5 +1,5 @@
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const DeviceTrigger = sequelize.define('DeviceTrigger', {
         id: {
             type: DataTypes.UUID,

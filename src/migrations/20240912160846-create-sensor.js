@@ -4,15 +4,7 @@
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.createTable('sensors', {
-      type: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      unit: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      deviceId: {
+      id: {
         type: Sequelize.UUID,
         primaryKey: true,
         references: {
@@ -20,6 +12,14 @@ module.exports = {
           key: 'id',
         },
         onDelete: 'CASCADE',
+        allowNull: false,
+      },
+      type: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      unit: {
+        type: Sequelize.STRING,
         allowNull: false,
       },
       createdAt: {

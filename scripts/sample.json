@@ -1,26 +1,97 @@
 {
-    "id": "e199393a-ab33-4d6e-a4ea-2f3679e04247",
-    "name": "Temperature Control Scenario",
-    "isEnabled": true,
-    "actions": [
+    "id": "a4ddd6a8-bc97-47e2-b15c-30cda057d486",
+    "label": "Test",
+    "nodes": [
         {
-            "id": "df393873-0d84-4d64-bfab-60c23b8707e5",
-            "deviceId": "b031f905-a977-4afb-933a-0184127dc90c",
-            "property": "status",
-            "value": "true"
+            "id": "d16a6cde-a7f3-44db-b0e8-23a8a4d67d521",
+            "type": "inject",
+            "name": "Inject Time",
+            "wires": [
+                [
+                    "4494c09e-3f03-4629-a47c-b204dad3717d2"
+                ]
+            ],
+            "payload": "",
+            "payloadType": "date",
+            "repeat": "60",
+            "once": true
+        },
+        {
+            "id": "4494c09e-3f03-4629-a47c-b204dad3717d2",
+            "type": "function",
+            "name": "Check Time Range",
+            "wires": [
+                [
+                    "53d4d27a-e96e-4645-a8ff-13f632c75d9a3"
+                ]
+            ],
+            "func": "function parseTimeString(timeStr) {\n        const parts = timeStr.split(':');\n        return {\n          hours: parseInt(parts[0], 10),\n          minutes: parseInt(parts[1], 10),\n          seconds: parseInt(parts[2], 10)\n        };\n      }\n      \n      const startTimeParts = parseTimeString('23:10:00');\n      const endTimeParts = parseTimeString('23:30:00');\n      \n      var currentTime = new Date(msg.payload);\n      \n      var startTime = new Date(currentTime);\n      startTime.setHours(startTimeParts.hours, startTimeParts.minutes, startTimeParts.seconds);\n      \n      var endTime = new Date(currentTime);\n      endTime.setHours(endTimeParts.hours, endTimeParts.minutes, endTimeParts.seconds);\n      \n      if (currentTime >= startTime && currentTime <= endTime) {\n        msg.payload = true;\n      } else {\n        msg.payload = false;\n      }\n      \n      return msg;\n    ",
+            "outputs": 1
+        },
+        {
+            "id": "53d4d27a-e96e-4645-a8ff-13f632c75d9a3",
+            "type": "switch",
+            "name": "Switch",
+            "wires": [
+                [
+                    "4c72977a-9204-4eaf-aef3-993820f7efc24"
+                ]
+            ],
+            "property": "payload",
+            "rules": [
+                {
+                    "t": "true"
+                }
+            ],
+            "checkall": "true",
+            "outputs": 1
+        },
+        {
+            "id": "4c72977a-9204-4eaf-aef3-993820f7efc24",
+            "type": "change",
+            "name": "Change Node",
+            "wires": [
+                [
+                    "0b44bd44-a420-4e56-8726-4d40dd9fa79e5"
+                ]
+            ],
+            "rules": [
+                {
+                    "t": "set",
+                    "p": "payload",
+                    "pt": "msg",
+                    "to": "{\"status\": \"ON\"}",
+                    "tot": "json"
+                }
+            ]
+        },
+        {
+            "id": "0b44bd44-a420-4e56-8726-4d40dd9fa79e5",
+            "type": "mqtt out",
+            "name": "MQTT Out",
+            "wires": [
+                []
+            ],
+            "topic": "device/5C:CF:7F:BE:E9:D1/set",
+            "qos": "0",
+            "retain": true,
+            "broker": "2bb9881e-7b04-40cf-960f-dc722d127667"
         }
     ],
-    "triggers": [
+    "configs": [
         {
-            "id": "cae28a1f-69e7-4e9a-8595-4aa9901a7f86",
-            "type": "time",
-            "detail": {
-                "id": "cae28a1f-69e7-4e9a-8595-4aa9901a7f86",
-                "startTime": "2024-09-15T08:00:00Z",
-                "endTime": "2024-09-15T18:00:00Z",
-                "createdAt": "2024-09-15T13:51:33.000Z"
+            "id": "2bb9881e-7b04-40cf-960f-dc722d127667",
+            "type": "mqtt-broker",
+            "broker": "192.168.2.156",
+            "port": "1883",
+            "clientid": "",
+            "usetls": false,
+            "keepalive": "60",
+            "cleansession": true,
+            "credentials": {
+                "user": "Admin",
+                "password": "123456"
             }
         }
-    ],
-    "conditions": []
+    ]
 }

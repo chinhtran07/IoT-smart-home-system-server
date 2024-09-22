@@ -1,20 +1,17 @@
-const bcrypt = require("bcryptjs");
-const paginate = require("../utils/paginator");
-const mysqlDb = require("../models/mysql");
-const CustomError = require("../utils/CustomError");
+import bcrypt from "bcryptjs";
+import mysqlDb from "../models/mysql/index.js";
+import CustomError from "../utils/CustomError.js";
 
-const getProfile = async (userId) => {
+export const getProfile = async (userId) => {
   try {
     const user = await mysqlDb.User.findOne({
       where: { id: userId },
       attributes: {
-        exclude: ["password", "createdAt", "updatedAt", "username"],
+        exclude: ["password", "createdAt", "updatedAt", "username", "refreshToken"],
       },
     });
     if (!user) {
-      const error = new Error("User not found");
-      error.status = 404;
-      throw error;
+      throw new CustomError("User not found", 404);
     }
     return user;
   } catch (error) {
@@ -22,11 +19,10 @@ const getProfile = async (userId) => {
   }
 };
 
-const updateUserProfile = async (userId, updateData) => {
+export const updateUserProfile = async (userId, updateData) => {
   try {
-
-    if (Object.keys(updateData).length < 0) {
-      return new CustomError("Emtpy updated data", 400);
+    if (Object.keys(updateData).length === 0) {
+      throw new CustomError("Empty updated data", 400);
     }
 
     const [updated] = await mysqlDb.User.update(updateData, {
@@ -44,20 +40,16 @@ const updateUserProfile = async (userId, updateData) => {
   }
 };
 
-const changePassword = async (userId, currentPassword, newPassword) => {
+export const changePassword = async (userId, currentPassword, newPassword) => {
   try {
     const user = await mysqlDb.User.findByPk(userId);
     if (!user) {
-      const error = new Error("User not found");
-      error.status = 404;
-      throw error;
+      throw new CustomError("User not found", 404);
     }
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      const error = new Error("Password not match");
-      error.status = 400;
-      throw error;
+      throw new CustomError("Password does not match", 400);
     }
 
     user.password = newPassword;
@@ -69,8 +61,7 @@ const changePassword = async (userId, currentPassword, newPassword) => {
   }
 };
 
-//test
-const getAllUsers = async (queryParams) => {
+export const getAllUsers = async (queryParams) => {
   try {
     const { page = 1, limit = 10 } = queryParams;
     const offset = (page - 1) * limit;
@@ -89,26 +80,15 @@ const getAllUsers = async (queryParams) => {
   }
 };
 
-//test
-const deleteUser = async (userId) => {
+export const deleteUser = async (userId) => {
   try {
     const user = await mysqlDb.User.findOne({ where: { id: userId } });
     if (!user) {
-      const error = new Error("User not found");
-      error.status = 404;
-      throw error;
+      throw new CustomError("User not found", 404);
     }
     await user.destroy();
     return { message: "User deleted successfully" };
   } catch (error) {
     throw error;
   }
-};
-
-module.exports = {
-  getProfile,
-  updateUserProfile,
-  changePassword,
-  getAllUsers,
-  deleteUser,
 };

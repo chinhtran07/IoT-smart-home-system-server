@@ -1,8 +1,7 @@
-// index.js
-const { connectToGateways } = require('./mqttManager');
-const clients = require('./mqttClient').clients;
+import { connectToGateways } from './mqttManager.js';
+import { clients } from './mqttClient.js';
 
-module.exports = {
+export {
     connectToGateways,
     clients,
 };

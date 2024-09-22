@@ -6,27 +6,17 @@ module.exports = {
     await queryInterface.createTable('actuators', {
       id: {
         type: Sequelize.UUID,
-        defaultValue: Sequelize.UUIDV4,
-        primaryKey: true,
-        allowNull: false,
-      },
-      deviceId: {
-        type: Sequelize.UUID,
         references: {
           model: 'devices', 
           key: 'id',
         },
+        primaryKey: true,
         onDelete: 'CASCADE',
         allowNull: false,
       },
       type: { 
         type: Sequelize.STRING, 
         allowNull: false 
-      },
-      action: {
-        type: Sequelize.ENUM('modify', 'control'),
-        defaultValue: 'control',
-        allowNull: false
       },
       properties: {
         type: Sequelize.JSON,

@@ -1,6 +1,5 @@
-const mongoose = require('mongoose');
 
-module.exports = (mongoose) => {
+export default (mongoose) => {
     const sensorDataScheme = new mongoose.Schema({
         deviceId: {
             type: String,

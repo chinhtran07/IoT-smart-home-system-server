@@ -44,8 +44,7 @@ class Node {
     }
 
 }
-
-module.exports = {
+export {
     NodeTypes,
     Node
 }

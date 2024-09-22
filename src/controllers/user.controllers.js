@@ -1,10 +1,10 @@
-const userServices = require("../services/user.services");
-const redisClient = require('../config/redis.config'); // Import Redis client
-const CustomError = require('../utils/CustomError');
+import * as userServices from '../services/user.services.js';
+import redisClient from '../config/redis.config.js'; // Import Redis client
+import CustomError from '../utils/CustomError.js';
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
-const getProfile = async (req, res, next) => {
+export const getProfile = async (req, res, next) => {
   try {
     const userId = req.params.userId;
     const cacheKey = `userProfile:${userId}`;
@@ -29,7 +29,7 @@ const getProfile = async (req, res, next) => {
   }
 };
 
-const getCurrentUser = async (req, res, next) => {
+export const getCurrentUser = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const cacheKey = `userProfile:${userId}`;
@@ -54,10 +54,10 @@ const getCurrentUser = async (req, res, next) => {
   }
 };
 
-const updateUser = async (req, res, next) => {
+export const updateUser = async (req, res, next) => {
   try {
-    const {firstName, lastName, email, phone} = req.body;
-    await userServices.updateUserProfile(req.user._id, {firstName, lastName, email, phone});
+    const { firstName, lastName, email, phone } = req.body;
+    await userServices.updateUserProfile(req.user._id, { firstName, lastName, email, phone });
     
     // Clear cache for the updated user profile
     await redisClient.del(`userProfile:${req.user._id}`);
@@ -68,7 +68,7 @@ const updateUser = async (req, res, next) => {
   }
 };
 
-const changePassword = async (req, res, next) => {
+export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
     await userServices.changePassword(req.user._id, currentPassword, newPassword);
@@ -82,7 +82,7 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-const deleteUser = async (req, res, next) => {
+export const deleteUser = async (req, res, next) => {
   try {
     await userServices.deleteUser(req.params.id);
     
@@ -95,20 +95,11 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-const getAllUsers = async (req, res, next) => {
+export const getAllUsers = async (req, res, next) => {
   try {
     const users = await userServices.getAllUsers(req.query);
     res.status(200).json(users);
   } catch (error) {
     next(error);
   }
-};
-
-module.exports = {
-  getProfile,
-  getCurrentUser,
-  updateUser,
-  changePassword,
-  deleteUser,
-  getAllUsers,
 };

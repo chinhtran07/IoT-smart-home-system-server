@@ -1,0 +1,22 @@
+{
+    "User": {
+      "id": { "position": 1 },
+      "lastName": { "position": 2 },
+      "firstName": { "position": 3 },
+      "phone": { "isVisible": false },
+      "username": { "isVisible": false },
+      "updatedAt": { "isVisible": {"edit" : false} },
+      "createdAt": { "isVisible": { "edit": false } },
+      "password": { "isVisible": false },
+      "refreshToken": { "isVisible": false },
+      "email": { "isVisible": { "list": true, "filter": true, "show": true, "edit": false } }
+    },
+    "Gateway": {},
+    "Device": {},
+    "Actuator": {},
+    "Sensor": {},
+    "Scenario": {},
+    "Schedule": {},
+    "Group": {}
+  }
+  

@@ -18,10 +18,10 @@ class Flow {
         return {
             id: this.id,
             label: this.label,
-            nodes: this.nodes.map(node => node.toJSON()),
+            nodes: this.nodes.map(node => node.toJSON(this.id)),
             configs: this.configs.map(config => config.toJSON())
         };
     }
 }
 
-module.exports = Flow;
+export default Flow;

@@ -1,8 +1,11 @@
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
     const Sensor = sequelize.define('Sensor', {
         id: {
             type: DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4,
+            references: {
+                model: 'devices',
+                key: 'id',
+            },
             primaryKey: true,
             allowNull: false,
         },
@@ -13,14 +16,6 @@ module.exports = (sequelize, DataTypes) => {
         unit: {
             type: DataTypes.STRING,
             allowNull: false,
-        },
-        deviceId: {
-            type: DataTypes.UUID,
-            references: {
-                model: 'devices',
-                key: 'id',
-            },
-            allowNull: false,
         }
     }, {
         tableName: "sensors",
@@ -28,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Sensor.associate = function (db) {
-        Sensor.belongsTo(db.Device, { foreignKey: 'deviceId', onDelete: 'CASCADE' });
+        Sensor.belongsTo(db.Device, { foreignKey: 'id', onDelete: 'CASCADE' });
     };
 
     return Sensor;

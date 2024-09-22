@@ -1,13 +1,12 @@
-// mqttControl.js
-const { clients } = require('./mqttClient');
+import { clients } from './mqttClient.js';
 
-const publishControlMessage = ( gatewayId, topic, payload ) => {
+const publishControlMessage = (gatewayId, topic, payload) => {
     const client = clients[gatewayId];
 
     console.log(payload);
     if (client) {
         try {
-            client.publish(topic, payload, true ,(err) => {
+            client.publish(topic, payload, true, (err) => {
                 if (err) {
                     console.error(`Failed to publish to topic ${topic}`, err);
                 } else {
@@ -22,6 +21,6 @@ const publishControlMessage = ( gatewayId, topic, payload ) => {
     }
 };
 
-module.exports = {
+export {
     publishControlMessage,
 };

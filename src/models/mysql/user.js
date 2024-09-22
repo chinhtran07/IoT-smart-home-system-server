@@ -1,8 +1,8 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const config = require('../../config');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import config from '../../config/index.js';
 
-module.exports = (sequelize, DataTypes) => {
+export default (sequelize, DataTypes) => {
   const User = sequelize.define(
     "User",
     {
@@ -42,6 +42,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("admin", "user"),
         defaultValue: "user",
       },
+      refreshToken: {
+        type: DataTypes.TEXT,
+        allowNull: true
+      }
     },
     {
       tableName: "users",
@@ -79,10 +83,13 @@ module.exports = (sequelize, DataTypes) => {
         role: this.role,
       },
       config.jwt.refresh_secret,
-      { expiresIn: '7d'}
-    )
+      { expiresIn: '7d' }
+    );
     
-    return {token, refreshToken};
+    this.refreshToken = refreshToken;
+    await this.save();
+
+    return { token, refreshToken };
   };
 
   return User;

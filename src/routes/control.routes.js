@@ -1,7 +1,23 @@
-const controlController = require('../controllers/control.controller');
-const express = require('express');
+// controlRoutes.js
+import express from 'express';
+import * as controlController from '../controllers/control.controller.js';
+import deviceAccessMiddleware from '../middlewares/deviceAccess.middleware.js';
+
 const router = express.Router();
 
-router.post('', require('../middlewares/deviceAccess.middleware')  ,controlController.controlDevice);
+/**
+ * @openapi
+ * /control:
+ *   post:
+ *     description: Control a device
+ *     tags:
+ *       - Control
+ *     responses:
+ *       200:
+ *         description: Device controlled successfully
+ *       403:
+ *         description: Forbidden
+ */
+router.post('/', deviceAccessMiddleware, controlController.controlDevice);
 
-module.exports = router;
+export default router;

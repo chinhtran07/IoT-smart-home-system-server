@@ -1,6 +1,6 @@
-const mysqlDb = require('../models/mysql');
+import mysqlDb from '../models/mysql/index.js';
 
-const createSchedule = async (actionData, scheduleData, userId) => {
+export const createSchedule = async (actionData, scheduleData, userId) => {
     try {
         const newSchedule = await mysqlDb.Schedule.create({
             userId: userId,
@@ -18,7 +18,7 @@ const createSchedule = async (actionData, scheduleData, userId) => {
     }
 };
 
-const getAllSchedules = async (userId) => {
+export const getAllSchedules = async (userId) => {
     try {
         const schedules = await mysqlDb.Schedule.findAll({
             where: { userId },
@@ -30,7 +30,7 @@ const getAllSchedules = async (userId) => {
     }
 };
 
-const getScheduleById = async (id) => {
+export const getScheduleById = async (id) => {
     try {
         const schedule = await mysqlDb.Schedule.findByPk(id, {
             include: [mysqlDb.Action]  
@@ -46,7 +46,7 @@ const getScheduleById = async (id) => {
     }
 };
 
-const updateSchedule = async (id, scheduleData, actionData) => {
+export const updateSchedule = async (id, scheduleData, actionData) => {
     try {
         const updatedSchedule = await mysqlDb.Schedule.update(scheduleData, {
             where: { id },
@@ -72,7 +72,7 @@ const updateSchedule = async (id, scheduleData, actionData) => {
     }
 };
 
-const deleteSchedule = async (id) => {
+export const deleteSchedule = async (id) => {
     try {
         const deletedSchedule = await mysqlDb.Schedule.destroy({
             where: { id },
@@ -90,10 +90,3 @@ const deleteSchedule = async (id) => {
     }
 };
 
-module.exports = {
-    createSchedule,
-    getAllSchedules,
-    getScheduleById,
-    updateSchedule,
-    deleteSchedule,
-};

@@ -1,11 +1,13 @@
-const express = require("express");
+// scenario.routes.js
+import express from 'express';
+
 const router = express.Router();
-const scenarioController = require('../controllers/scenario.controller');
+import * as scenarioController from '../controllers/scenario.controller.js';
 
-router.post("", scenarioController.createAutomationScenario);
-router.get("/owner", scenarioController.getScenariosByUser);
-router.get("/:id", scenarioController.getScenarioById);
-router.put("/:id", scenarioController.updateAutomationScenario);
-router.delete("/:id", scenarioController.deleteScenario);
+router.post('', scenarioController.createAutomationScenario);
+router.get('/owner', scenarioController.getScenariosByUser);
+router.get('/:id', scenarioController.getScenarioById);
+router.put('/:id', scenarioController.updateAutomationScenario);
+router.delete('/:id', scenarioController.deleteScenario);
 
-module.exports = router;
+export default router;

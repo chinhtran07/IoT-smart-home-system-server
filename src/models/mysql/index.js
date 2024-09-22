@@ -1,10 +1,12 @@
-const { Sequelize, DataTypes } = require('sequelize');
-const config = require('../../config/config.json');
+import { Sequelize, DataTypes } from 'sequelize';
+import fs from 'fs';
+import path from 'path';
+import { readFile } from 'fs/promises';
+
+const config = JSON.parse(await readFile(new URL('../../config/config.json', import.meta.url)));
 const env = process.env.NODE_ENV || 'development';
 const configEnv = config[env];
-const fs = require('fs');
-const path = require('path');
-const basename = path.basename(__filename);
+const basename = path.basename(new URL(import.meta.url).pathname);
 
 
 const sequelize = new Sequelize(configEnv.database, configEnv.username, configEnv.password, {
@@ -14,8 +16,10 @@ const sequelize = new Sequelize(configEnv.database, configEnv.username, configEn
 
 const db = {};
 
-fs
-  .readdirSync(__dirname)
+const modelsPath = path.dirname(new URL(import.meta.url).pathname);
+
+
+const modelFiles = fs.readdirSync(modelsPath)
   .filter(file => {
     return (
       file.indexOf('.') !== 0 &&
@@ -23,11 +27,15 @@ fs
       file.slice(-3) === '.js' &&
       file.indexOf('.test.js') === -1
     );
-  })
-  .forEach(file => {
-    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-    db[model.name] = model;
   });
+
+for (const file of modelFiles) {
+  const model = await import(path.join(modelsPath, file));
+  const modelInstance = model.default(sequelize, DataTypes);
+  db[modelInstance.name] = modelInstance;
+}
+
+
 
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
@@ -35,25 +43,7 @@ Object.keys(db).forEach(modelName => {
   }
 });
 
-
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-// db.User = require('./user')(sequelize, DataTypes);
-// db.Gateway = require('./gateway')(sequelize, DataTypes);
-// db.Device = require('./device')(sequelize, DataTypes);
-// db.Group = require('./group')(sequelize, DataTypes);
-// db.DeviceGroup = require('./deviceGroup')(sequelize, DataTypes);
-// db.Action = require('./action')(sequelize, DataTypes);
-// db.Scenario = require('./scenario')(sequelize, DataTypes);
-// db.Trigger = require('./trigger')(sequelize, DataTypes);
-// db.TimeTrigger = require('./timeTrigger')(sequelize, DataTypes);
-// db.DeviceTrigger = require('./deviceTrigger')(sequelize, DataTypes);
-// db.Condition = require('./condition')(sequelize, DataTypes);
-// db.Actuator = require('./actuator')(sequelize, DataTypes);
-// db.Sensor = require('./sensor')(sequelize, DataTypes);
-// db.Schedule = require('./schedule')(sequelize, DataTypes);
-
-
-
-module.exports = db;
+export default db;

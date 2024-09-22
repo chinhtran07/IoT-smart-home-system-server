@@ -1,6 +1,6 @@
-const mysqlDb = require('../models/mysql');
-const redisClient = require('../config/redis.config'); 
-const myEmitter = require('../events/eventsEmitter');
+import mysqlDb from '../models/mysql/index.js';
+import redisClient from '../config/redis.config.js'; 
+import myEmitter from '../events/eventsEmitter.js';
 
 const checkHeartbeat = async () => {
     try {
@@ -32,7 +32,7 @@ const checkHeartbeat = async () => {
                             { where: { id: deviceId } }
                         );
 
-                        data = {
+                        const data = {
                             alive: false,
                         }
 
@@ -54,8 +54,14 @@ const checkHeartbeat = async () => {
     }
 };
 
-const startService = () => {
-    setInterval(checkHeartbeat, 60000);
-};
+let intervalId;
 
-module.exports = startService;
+export const startService = () => {
+    intervalId = setInterval(() => {
+      
+      console.log('Checking heartbeat...');
+    }, 60000);
+  
+    return () => clearInterval(intervalId);
+};
+  

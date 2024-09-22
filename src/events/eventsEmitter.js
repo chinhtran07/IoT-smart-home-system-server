@@ -1,6 +1,6 @@
-const EventEmitter = require('events');
-const emmitter = new EventEmitter();
+import { EventEmitter } from 'events';
 
-emmitter.setMaxListeners(20);
+const emitter = new EventEmitter();
+emitter.setMaxListeners(11);
 
-module.exports = emmitter;
+export default emitter;

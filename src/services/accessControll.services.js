@@ -1,104 +1,89 @@
-const mongoDb = require('../models/mongo');
+import mongoDb from '../models/mongo/index.js';
+import CustomError from '../utils/CustomError.js';
 
-const createAccessControl = async (ownerId,userId, permissions) => {
-  try {
-    const accessControl = new mongoDb.AccessControl({
-      owner: ownerId,
-      userId,
-      permissions,
-    });
+export const createAccessControl = async (ownerId, userId, permissions) => {
+    try {
+        const accessControl = new mongoDb.AccessControl({
+            owner: ownerId,
+            userId,
+            permissions,
+        });
 
-    await accessControl.save();
-  } catch (error) {
-    throw new Error(error.message);
-  }
-};
-
-const getAccessControlByUserId = async (userId, ownerId) => {
-  try {
-    const accessControl = await mongoDb.AccessControl.findOne({
-      userId: userId,
-      owner: ownerId,
-    });
-
-    if (!accessControl) {
-      const error = new Error("Not Found");
-      error.status = 404;
-      throw error;
+        await accessControl.save();
+    } catch (error) {
+        throw new CustomError(error.message);
     }
-    
-    return accessControl;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
+export const getAccessControlByUserId = async (userId, ownerId) => {
+    try {
+        const accessControl = await mongoDb.AccessControl.findOne({
+            userId: userId,
+            owner: ownerId,
+        });
 
-const updateAccessControl = async (ownerId, userId, permissions) => {
-  try {
-    const updatedAccessControl = await mongoDb.AccessControl.findOneAndUpdate(
-      { owner: ownerId, userId: userId },
-      { permissions },
-      { new: true, runValidators: true }
-    );
+        if (!accessControl) {
+            throw new CustomError("Not Found", 404);
+        }
 
-    if (!updatedAccessControl) {
-      const error = new Error("Not Found");
-      error.status = 404;
-      throw error;
+        return accessControl;
+    } catch (error) {
+        throw new CustomError(error.message);
     }
-    
-    return updatedAccessControl;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
-const getGrantedUsersByOwner = async (ownerId) => {
-  try {
-    const accessControls = await mongoDb.AccessControl.find({ owner: ownerId });
+export const updateAccessControl = async (ownerId, userId, permissions) => {
+    try {
+        const updatedAccessControl = await mongoDb.AccessControl.findOneAndUpdate(
+            { owner: ownerId, userId: userId },
+            { permissions },
+            { new: true, runValidators: true }
+        );
 
-    if (!accessControls.length) {
-      const error = new Error("No users found for this owner");
-      error.status = 404;
-      throw error;
+        if (!updatedAccessControl) {
+            throw new CustomError("Not Found", 404);
+        }
+
+        return updatedAccessControl;
+    } catch (error) {
+        throw new CustomError(error.message);
     }
-
-    const users = accessControls.map(ac => ({
-      user: ac.userId,
-      permissions: ac.permissions,
-    }));
-
-    return users;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
-const deleteAccessControl = async (ownerId, userId) => {
-  try {
-    const deletedItem = await mongoDb.AccessControl.findOneAndDelete({
-      owner: ownerId,
-      userId: userId,
-    });
+export const getGrantedUsersByOwner = async (ownerId) => {
+    try {
+        const accessControls = await mongoDb.AccessControl.find({ owner: ownerId });
 
-    if (!deletedItem) {
-      const error = new Error("Access control not Found");
-      error.status = 404;
-      throw error;
+        if (!accessControls.length) {
+            throw new CustomError("No users found for this owner", 404);
+        }
+
+        const users = accessControls.map(ac => ({
+            user: ac.userId,
+            permissions: ac.permissions,
+        }));
+
+        return users;
+    } catch (error) {
+        throw new CustomError(error.message);
     }
-
-    return deletedItem;
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
+export const deleteAccessControl = async (ownerId, userId) => {
+    try {
+        const deletedItem = await mongoDb.AccessControl.findOneAndDelete({
+            owner: ownerId,
+            userId: userId,
+        });
 
-module.exports = {
-  createAccessControl,
-  getAccessControlByUserId,
-  updateAccessControl,
-  getGrantedUsersByOwner,
-  deleteAccessControl,
+        if (!deletedItem) {
+            throw new CustomError("Access control not Found", 404);
+        }
+
+        return deletedItem;
+    } catch (error) {
+        throw new CustomError(error.message);
+    }
 };
+
+export default CustomError;

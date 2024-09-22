@@ -1,6 +1,6 @@
-const mongoDb = require('../models/mongo');
-const mysqlDb = require('../models/mysql');
-const redisClient = require('../config/redis.config'); // Import Redis client
+import mongoDb from '../models/mongo/index.js';
+import mysqlDb from '../models/mysql/index.js';
+import redisClient from '../config/redis.config.js'; // Import Redis client
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
@@ -54,4 +54,4 @@ const checkDeviceAccess = async (req, res, next) => {
     }
 };
 
-module.exports = checkDeviceAccess;
+export default checkDeviceAccess;
