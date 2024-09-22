@@ -67,12 +67,6 @@ const adminJs = new AdminJS({
         navigation: automationsNavigation,
       },
     },
-    {
-      resource: db.Schedule,
-      options: {
-        navigation: automationsNavigation,
-      },
-    },
   ],
   rootPath: "/admin",
   branding: {
