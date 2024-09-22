@@ -15,7 +15,8 @@ export default (sequelize, DataTypes) => {
             references: {
                 model: 'users',
                 key: 'id',
-            }
+            },
+            allowNull: false
         },
         isEnabled: {
             type: DataTypes.BOOLEAN,

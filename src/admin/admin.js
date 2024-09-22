@@ -99,6 +99,6 @@ const router = AdminJsExpress.buildAuthenticatedRouter(adminJs, {
     return { email: adminUser.email, role: adminUser.role };
   },
   cookiePassword: process.env.COOKIE_SECRET,
-});
+},null, sessionMiddleware);
 
 export { adminJs, router, sessionMiddleware };

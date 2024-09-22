@@ -1,16 +1,13 @@
 'use strict';
 
 /** @type {import('sequelize-cli').Migration} */
-module.exports = {
-  async up (queryInterface, Sequelize) {
-    await queryInterface.addColumn('actions', 'description', {
-      type: Sequelize.STRING,
-      allowNull: true,
-    });
-  },
+export async function up(queryInterface, Sequelize) {
+  await queryInterface.addColumn('actions', 'description', {
+    type: Sequelize.STRING,
+    allowNull: true,
+  });
+}
+export async function down(queryInterface, Sequelize) {
+  await queryInterface.removeColumn('actions', 'description');
 
-  async down (queryInterface, Sequelize) {
-    await queryInterface.removeColumn('actions', 'description');
-
-  }
-};
+}

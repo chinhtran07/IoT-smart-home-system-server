@@ -58,8 +58,7 @@ let intervalId;
 
 export const startService = () => {
     intervalId = setInterval(() => {
-      
-      console.log('Checking heartbeat...');
+        checkHeartbeat();
     }, 60000);
   
     return () => clearInterval(intervalId);
