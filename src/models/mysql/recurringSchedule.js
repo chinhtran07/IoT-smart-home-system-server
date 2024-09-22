@@ -17,6 +17,7 @@ export default (sequelize, DataTypes) => {
         recurrencePattern: {
             type: DataTypes.JSON,
             allowNull: false,
+            comment: []
         },
         startDate: {
             type: DataTypes.DATE,

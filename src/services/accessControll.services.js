@@ -1,4 +1,3 @@
-// accessControl.controller.js
 import mongoDb from '../models/mongo/index.js';
 import CustomError from '../utils/CustomError.js';
 

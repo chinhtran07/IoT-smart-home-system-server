@@ -32,7 +32,7 @@ const checkHeartbeat = async () => {
                             { where: { id: deviceId } }
                         );
 
-                        data = {
+                        const data = {
                             alive: false,
                         }
 
@@ -54,6 +54,14 @@ const checkHeartbeat = async () => {
     }
 };
 
+let intervalId;
+
 export const startService = () => {
-    setInterval(checkHeartbeat, 60000);
+    intervalId = setInterval(() => {
+      
+      console.log('Checking heartbeat...');
+    }, 60000);
+  
+    return () => clearInterval(intervalId);
 };
+  

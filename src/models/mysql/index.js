@@ -1,11 +1,13 @@
 import { Sequelize, DataTypes } from 'sequelize';
 import fs from 'fs';
 import path from 'path';
-import config from '../../config/config.js';
+import { readFile } from 'fs/promises';
 
+const config = JSON.parse(await readFile(new URL('../../config/config.json', import.meta.url)));
 const env = process.env.NODE_ENV || 'development';
 const configEnv = config[env];
 const basename = path.basename(new URL(import.meta.url).pathname);
+
 
 const sequelize = new Sequelize(configEnv.database, configEnv.username, configEnv.password, {
   host: configEnv.host,
