@@ -18,7 +18,7 @@ export default (sequelize, DataTypes) => {
       },
       password: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
       },
       firstName: {
         type: DataTypes.STRING,
@@ -35,7 +35,7 @@ export default (sequelize, DataTypes) => {
       },
       phone: {
         type: DataTypes.STRING,
-        allowNull: false,
+        allowNull: true,
         unique: true,
       },
       role: {
@@ -45,6 +45,11 @@ export default (sequelize, DataTypes) => {
       refreshToken: {
         type: DataTypes.TEXT,
         allowNull: true
+      },
+      googleId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true
       }
     },
     {
