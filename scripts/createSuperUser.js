@@ -1,17 +1,16 @@
-const bcrypt = require("bcryptjs");
-const mysqldb = require('../src/models/mysql');
+import mysqldb from "../src/models/mysql/index.js"
 
 const createSuperuser = async () => {
   try {
     // Define superuser details
     const superuserDetails = {
       username: 'Admin',
-      password: '123456', // This will be hashed
+      password: '123456',
       firstName: 'Admin',
       lastName: 'Admin',
       email: 'admin@example.com',
       phone: '1234567890',
-      role: 'admin', // Assigning admin role
+      role: 'admin', 
     };
 
     // Check if the superuser already exists

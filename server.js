@@ -8,6 +8,7 @@ import mysqldb from './src/models/mysql/index.js';
 import { connectToGateways } from './src/mqtt/index.js';
 import { initSocket } from './src/socket/socketHandler.js';
 import { startService } from './src/tasks/checkHeartbeat.js';
+import ngrok from "@ngrok/ngrok";
 
 dotenv.config();
 
@@ -36,6 +37,9 @@ server.listen(config.port, () => {
   console.log(`Server started at http://localhost:${config.port}`);
 });
 
+ngrok.connect({ addr: config.port, authtoken: process.env.NGROK_AUTHTOKEN, domain: "strong-complete-sculpin.ngrok-free.app" })
+.then(listener => console.log(`Ingress established at: ${listener.url()}`))
+
 const stopService = startService();
 
 process.on('SIGINT', () => {
@@ -46,5 +50,7 @@ process.on('SIGINT', () => {
     console.log('Server closed');
     process.exit(0);
   });
+
+  ngrok.disconnect();
 });
 
