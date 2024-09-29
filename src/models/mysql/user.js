@@ -50,6 +50,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
         unique: true
+      },
+      avatarURI: {
+        type: DataTypes.STRING,
+        allowNull: true,
       }
     },
     {

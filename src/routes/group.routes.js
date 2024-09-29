@@ -1,6 +1,7 @@
 // groupRoutes.js
 import express from 'express';
 import * as groupController from '../controllers/group.controller.js';
+import upload from '../utils/upload.js';
 
 const router = express.Router();
 
@@ -142,5 +143,7 @@ router.get('/access-control', groupController.getGroupsByAccessControl);
  *         description: Group not found
  */
 router.delete('/:id', groupController.deleteGroup);
+
+router.post('/:id/icon', upload.single('icon'), groupController.updateIcon);
 
 export default router;

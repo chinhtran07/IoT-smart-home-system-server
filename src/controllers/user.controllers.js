@@ -103,3 +103,20 @@ export const getAllUsers = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateAvatar = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const file = req.file;
+    if (!file) {
+      next(CustomError("No file uploaded", 400));
+    }
+
+    const url = await userServices.updateAvatar(userId, file);
+
+    res.status(200).json({ avatarURI: url });
+
+  } catch (error) {
+    next(error);
+  }
+}

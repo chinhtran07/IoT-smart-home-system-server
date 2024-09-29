@@ -136,13 +136,30 @@ export const getGroupsByAccessControl = async (userId) => {
     }
 };
 
-export default {
-    addGroup,
-    addDeviceToGroup,
-    getAllGroups,
-    getGroupById,
-    updateGroup,
-    deleteGroup,
-    removeDevicesFromGroup,
-    getGroupsByAccessControl
-};
+export const uploadIcon = async (groupId, file) => {
+    try {
+        const group = await mysqlDb.Group.findByPk(groupId);
+        if (!group) {
+          throw new CustomError("User not found", 404);
+        }
+    
+        const uploadResponse = await cloudinary.uploader.upload_stream((error, result) => {
+          if (error) {
+            throw new CustomError("Failed to upload image to Cloudinary", 500);
+          }
+          return result.secure_url;
+        });
+        file.stream.pipe(uploadResponse);
+    
+        const icon = await new Promise((resolve, reject) => {
+          uploadResponse.on("finish", () => resolve(uploadResponse.url));
+          uploadResponse.on("error", reject);
+        });
+    
+        group.icon = icon;
+        await group.save();
+        return avatarURI;
+      } catch (error) {
+        throw error;
+      }
+}

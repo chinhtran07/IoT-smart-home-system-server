@@ -13,10 +13,11 @@ import { adminJs, router, sessionMiddleware } from './admin/admin.js';
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
-import jwt from "jsonwebtoken";
 import mysqlDb from "./models/mysql/index.js";
+import multer from "multer";
 
 const app = express();
+
 
 // Middleware
 app.use(sessionMiddleware);

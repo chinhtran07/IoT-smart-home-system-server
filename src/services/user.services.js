@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import mysqlDb from "../models/mysql/index.js";
 import CustomError from "../utils/CustomError.js";
+import cloudinary from "../config/cloudinary.config.js";
 
 export const getProfile = async (userId) => {
   try {
@@ -92,3 +93,31 @@ export const deleteUser = async (userId) => {
     throw error;
   }
 };
+
+export const updateAvatar = async (userId, file) => {
+  try {
+    const user = await mysqlDb.User.findByPk(userId);
+    if (!user) {
+      throw new CustomError("User not found", 404);
+    }
+
+    const uploadResponse = await cloudinary.uploader.upload_stream((error, result) => {
+      if (error) {
+        throw new CustomError("Failed to upload image to Cloudinary", 500);
+      }
+      return result.secure_url;
+    });
+    file.stream.pipe(uploadResponse);
+
+    const avatarURI = await new Promise((resolve, reject) => {
+      uploadResponse.on("finish", () => resolve(uploadResponse.url));
+      uploadResponse.on("error", reject);
+    });
+
+    user.avatarURI = avatarURI;
+    await user.save();
+    return avatarURI;
+  } catch (error) {
+    throw error;
+  }
+}
