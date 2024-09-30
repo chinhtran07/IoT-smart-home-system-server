@@ -1,11 +1,10 @@
 import * as accessControlService from '../services/accessControll.services.js';
-import mysqlDb from '../models/mysql/index.js'; // Adjust path as necessary
 import redisClient from '../config/redis.config.js'; // Adjust path as necessary
 
 export const grantPermission = async (req, res, next) => {
     try {
         const { userId, permissions } = req.body;
-        const user = await mysqlDb.User.findByPk(userId);
+        const user = await User.findByPk(userId);
         if (!user) {
             const error = new Error("User not found");
             error.status = 404;
