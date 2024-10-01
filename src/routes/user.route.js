@@ -2,7 +2,7 @@
 import express from 'express';
 
 const router = express.Router();
-import * as userControllers from '../controllers/user.controllers.js';
+import * as userControllers from '../controllers/user.controller.js';
 import { authorize } from '../middlewares/auth.middleware.js';
 import upload from '../utils/upload.js';
 

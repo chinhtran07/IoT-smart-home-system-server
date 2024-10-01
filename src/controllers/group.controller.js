@@ -1,4 +1,4 @@
-import * as groupService from '../services/group.services.js';
+import * as groupService from '../services/group.service.js';
 import redisClient from '../config/redis.config.js'; // Import Redis client
 import CustomError from '../utils/CustomError.js';
 

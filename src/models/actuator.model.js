@@ -11,6 +11,10 @@ const actuatorSchema = new mongoose.Schema(
       type: Object,
       required: true,
     },
+    actions: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Action"
+    }]
   },
   { _id: false }
 );

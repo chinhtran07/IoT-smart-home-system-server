@@ -1,4 +1,4 @@
-import { getGatewayByUser } from "../services/gateway.services.js";
+import { getGatewayByUser } from "../services/gateway.service.js";
 import * as scenarioService from "../services/scenario.service.js";
 import redisClient from '../config/redis.config.js'; // Import Redis client
 

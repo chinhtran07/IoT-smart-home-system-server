@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import * as mqttService from "../mqtt/mqttManager.js";
+import * as mqttService from "../../mqtt/mqttManager.js";
 
 const gatewaySchema = new mongoose.Schema(
   {

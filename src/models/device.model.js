@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import mqttService from "../mqtt/mqttManager.js";
+import mqttService from "../../mqtt/mqttManager.js";
 
 const deviceSchema = new mongoose.Schema(
   {
@@ -42,7 +42,7 @@ const deviceSchema = new mongoose.Schema(
     groups: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
+        ref: "Group"
       },
     ],
   },

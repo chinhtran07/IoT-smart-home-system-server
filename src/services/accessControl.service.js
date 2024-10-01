@@ -1,9 +1,9 @@
-import mongoDb from '../models/mongo/index.js';
+import AccessControl from '../models/accessControl.model.js';
 import CustomError from '../utils/CustomError.js';
 
 export const createAccessControl = async (ownerId, userId, permissions) => {
     try {
-        const accessControl = new mongoDb.AccessControl({
+        const accessControl = new AccessControl({
             owner: ownerId,
             userId,
             permissions,
@@ -17,7 +17,7 @@ export const createAccessControl = async (ownerId, userId, permissions) => {
 
 export const getAccessControlByUserId = async (userId, ownerId) => {
     try {
-        const accessControl = await mongoDb.AccessControl.findOne({
+        const accessControl = await AccessControl.findOne({
             userId: userId,
             owner: ownerId,
         });
@@ -34,7 +34,7 @@ export const getAccessControlByUserId = async (userId, ownerId) => {
 
 export const updateAccessControl = async (ownerId, userId, permissions) => {
     try {
-        const updatedAccessControl = await mongoDb.AccessControl.findOneAndUpdate(
+        const updatedAccessControl = await AccessControl.findOneAndUpdate(
             { owner: ownerId, userId: userId },
             { permissions },
             { new: true, runValidators: true }
@@ -52,7 +52,7 @@ export const updateAccessControl = async (ownerId, userId, permissions) => {
 
 export const getGrantedUsersByOwner = async (ownerId) => {
     try {
-        const accessControls = await mongoDb.AccessControl.find({ owner: ownerId });
+        const accessControls = await AccessControl.find({ owner: ownerId });
 
         if (!accessControls.length) {
             throw new CustomError("No users found for this owner", 404);
@@ -71,7 +71,7 @@ export const getGrantedUsersByOwner = async (ownerId) => {
 
 export const deleteAccessControl = async (ownerId, userId) => {
     try {
-        const deletedItem = await mongoDb.AccessControl.findOneAndDelete({
+        const deletedItem = await AccessControl.findOneAndDelete({
             owner: ownerId,
             userId: userId,
         });
@@ -85,5 +85,3 @@ export const deleteAccessControl = async (ownerId, userId) => {
         throw new CustomError(error.message);
     }
 };
-
-export default CustomError;

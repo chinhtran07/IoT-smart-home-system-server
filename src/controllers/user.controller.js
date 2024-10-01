@@ -1,4 +1,4 @@
-import * as userServices from '../services/user.services.js';
+import * as userServices from '../services/user.service.js';
 import redisClient from '../config/redis.config.js'; // Import Redis client
 import CustomError from '../utils/CustomError.js';
 

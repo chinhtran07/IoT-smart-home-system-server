@@ -16,6 +16,9 @@ const groupSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    icon: {
+      type: String,
+    }
   },
   {
     timestamps: true,

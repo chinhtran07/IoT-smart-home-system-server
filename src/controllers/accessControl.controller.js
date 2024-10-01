@@ -1,22 +1,22 @@
-import * as accessControlService from '../services/accessControll.services.js';
-import redisClient from '../config/redis.config.js'; // Adjust path as necessary
+import User from '../models/user.model.js';
+import CustomError from '../utils/CustomError.js';
+import * as accessControlService from "../services/accessControl.service.js";
 
 export const grantPermission = async (req, res, next) => {
     try {
         const { userId, permissions } = req.body;
-        const user = await User.findByPk(userId);
+
+        const user = await User.findById(userId);
         if (!user) {
-            const error = new Error("User not found");
-            error.status = 404;
-            return next(error);
+            next(new CustomError("User not found", 404));
+            return;
         }
+
         const result = await accessControlService.createAccessControl(
-            req.user.id,
+            req.user._id, 
             userId,
             permissions
         );
-
-        await redisClient.del(`accessControl:${userId}:${req.user.id}`);
 
         res.status(200).json(result);
     } catch (error) {
@@ -27,25 +27,17 @@ export const grantPermission = async (req, res, next) => {
 export const getAccessControl = async (req, res, next) => {
     try {
         const userId = req.params.userId;
-        const cacheKey = `accessControl:${userId}:${req.user.id}`;
 
-        const cachedAccessControl = await redisClient.get(cacheKey);
-        if (cachedAccessControl) {
-            return res.status(200).json(JSON.parse(cachedAccessControl));
-        }
-
-        const user = await mysqlDb.User.findByPk(userId);
+        const user = await User.findById(userId);
         if (!user) {
-            const error = new Error("User not found");
-            error.status = 404;
-            return next(error);
+            next(new CustomError("User not found", 404));
+            return;
         }
+
         const accessControl = await accessControlService.getAccessControlByUserId(
             userId,
-            req.user.id
+            req.user._id
         );
-
-        await redisClient.set(cacheKey, JSON.stringify(accessControl), { EX: 3600 });
 
         res.status(200).json(accessControl);
     } catch (error) {
@@ -57,19 +49,18 @@ export const updateAccessControl = async (req, res, next) => {
     try {
         const userId = req.body.userId;
         const { permissions } = req.body;
-        const user = await mysqlDb.User.findByPk(userId);
+
+        const user = await User.findById(userId);
         if (!user) {
-            const error = new Error("User not found");
-            error.status = 404;
-            return next(error);
+            next(new CustomError("User not found", 404));
+            return;
         }
+
         await accessControlService.updateAccessControl(
-            req.user.id,
+            req.user._id,
             userId,
             permissions
         );
-
-        await redisClient.del(`accessControl:${userId}:${req.user.id}`);
 
         res.sendStatus(204);
     } catch (error) {
@@ -79,16 +70,7 @@ export const updateAccessControl = async (req, res, next) => {
 
 export const getGrantedUsersByOwner = async (req, res, next) => {
     try {
-        const cacheKey = `grantedUsers:${req.user.id}`;
-
-        const cachedUsers = await redisClient.get(cacheKey);
-        if (cachedUsers) {
-            return res.status(200).json(JSON.parse(cachedUsers));
-        }
-
-        const users = await accessControlService.getGrantedUsersByOwner(req.user.id);
-        await redisClient.set(cacheKey, JSON.stringify(users), { EX: 3600 });
-
+        const users = await accessControlService.getGrantedUsersByOwner(req.user._id);
         res.json(users);
     } catch (error) {
         next(error);
@@ -98,10 +80,8 @@ export const getGrantedUsersByOwner = async (req, res, next) => {
 export const deleteAccessControl = async (req, res, next) => {
     try {
         const userId = req.params.userId;
-        await accessControlService.deleteAccessControl(req.user.id, userId);
 
-        await redisClient.del(`accessControl:${userId}:${req.user.id}`);
-        
+        await accessControlService.deleteAccessControl(req.user._id, userId);
         res.sendStatus(204);
     } catch (error) {
         next(error);
