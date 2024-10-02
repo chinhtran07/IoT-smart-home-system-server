@@ -1,10 +1,22 @@
+import jwt from "jsonwebtoken";
 import myEmitter from "../events/eventsEmitter.js";
-import mongoDB from "../models/mongo/index.js";
-import mysqlDb from "../models/mysql/index.js";
+import SensorData from "../models/sensorData.model.js";
+import Actuator from "../models/actuator.model.js";
 
 export const initSocket = async (io) => {
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (!token) return next(new Error("Authentication error"));
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) return next(new Error("Authentication error"));
+      socket.user = user;
+      next();
+    });
+  });
+
   io.on("connection", (socket) => {
-    console.log("New client connected:", socket.id);
+    console.log(`Client connected: ${socket.id}`);
 
     socket.on("subscribe", (deviceId) => {
       console.log(`Client ${socket.id} subscribed to device ${deviceId}`);
@@ -19,36 +31,37 @@ export const initSocket = async (io) => {
     });
 
     socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+      console.log(`Client disconnected: ${socket.id}`);
     });
 
     const handleDataReceived = async ({ device, data }) => {
       try {
         if (device.type === "sensor") {
-          const sensorData = new mongoDB.SensorData({
+          // Save sensor data
+          await SensorData.create({
             ...data,
             deviceId: device._id,
           });
-          await sensorData.save();
         } else if (device.type === "actuator") {
-            console.log(data);
-          const actuator = await mysqlDb.Actuator.findByPk(device.id);
-          const updatedProperties = { ...actuator.properties };
+          const actuator = await Actuator.findById(device._id);
+          if (!actuator) return;
 
-          let hasChanges = false;
-          for (const [key, value] of Object.entries(data)) {
-            if (updatedProperties[key] !== value) {
-              updatedProperties[key] = value;
-              hasChanges = true;
+          // Update properties only if changed
+          const updatedProperties = Object.entries(data).reduce((acc, [key, value]) => {
+            if (actuator.properties[key] !== value) {
+              acc[key] = value;
             }
-          }
+            return acc;
+          }, {});
 
-          if (hasChanges) {
-            await actuator.update({ properties: updatedProperties });
+          if (Object.keys(updatedProperties).length) {
+            actuator.properties = { ...actuator.properties, ...updatedProperties };
+            await actuator.save();
           }
         }
 
-        io.to(device.id.toString()).emit("data", data);
+        // Emit data to the subscribed clients
+        io.to(device._id.toString()).emit("data", data);
       } catch (err) {
         console.error("Error processing data:", err);
       }
@@ -56,16 +69,21 @@ export const initSocket = async (io) => {
 
     const handleHeartbeat = async ({ device, data }) => {
       try {
-        io.to(`heartbeat${device.id}`).emit("heartbeat", data);
+        // Emit heartbeat event to subscribed clients
+        io.to(`heartbeat${device._id}`).emit("heartbeat", data);
       } catch (error) {
-        console.error(error.message);
+        console.error("Error emitting heartbeat:", error.message);
       }
     };
 
-    // myEmitter.off('dataReceived', handleDataReceived);
+    // Attach event listeners once per socket connection
     myEmitter.on("dataReceived", handleDataReceived);
-
-    // myEmitter.off('heartbeat', handleHeartbeat);
     myEmitter.on("heartbeat", handleHeartbeat);
+
+    socket.on("disconnect", () => {
+      // Cleanup event listeners on disconnect to prevent memory leaks
+      myEmitter.off("dataReceived", handleDataReceived);
+      myEmitter.off("heartbeat", handleHeartbeat);
+    });
   });
 };

@@ -1,4 +1,4 @@
-import groupService from '../services/group.services.js';
+import * as groupService from '../services/group.service.js';
 import redisClient from '../config/redis.config.js'; // Import Redis client
 import CustomError from '../utils/CustomError.js';
 
@@ -149,3 +149,20 @@ export const deleteGroup = async (req, res, next) => {
         next(error);
     }
 };
+
+export const updateIcon = async (req, res, next) => {
+    try {
+      const groupId = req.params.id;
+      const file = req.file;
+      if (!file) {
+        next(CustomError("No file uploaded", 400));
+      }
+  
+      const url = await groupService.uploadIcon(groupId, file);
+  
+      res.status(200).json({ icon: url });
+  
+    } catch (error) {
+      next(error);
+    }
+  }
