@@ -89,6 +89,10 @@ const router = AdminJsExpress.buildAuthenticatedRouter(
     cookiePassword: process.env.COOKIE_SECRET,
   },
   null,
+  {
+    resave: true,
+    saveUninitialized: true
+  },
   sessionMiddleware
 );
 
