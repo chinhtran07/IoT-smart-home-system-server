@@ -1,25 +1,21 @@
 import mongoose from "mongoose";
-import Device from "./device.model";
+import Device from "./device.model.js";
 
-const actuatorSchema = new mongoose.Schema(
-  {
-    detailedType: {
-      type: String,
-      required: true,
-    },
-    properties: {
-      type: Object,
-      required: true,
-    },
-    actions: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Action"
-    }]
+// Define the Actuator schema
+const actuatorSchema = new mongoose.Schema({
+  detailedType: {
+    type: String,
+    required: true,
   },
-  { _id: false }
-);
-
-actuatorSchema.add(Device);
+  properties: {
+    type: Object,
+    required: true,
+  },
+  actions: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Action",
+  }],
+});
 
 const Actuator = Device.discriminator("Actuator", actuatorSchema);
 

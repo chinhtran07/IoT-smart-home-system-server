@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
 const emitter = new EventEmitter();
-emitter.setMaxListeners(11);
+emitter.setMaxListeners(20);
 
 export default emitter;

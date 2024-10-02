@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Device from "./device.model";
+import Device from "./device.model.js";
 
 const sensorSchema = new mongoose.Schema({
   detailedType: {
@@ -11,10 +11,8 @@ const sensorSchema = new mongoose.Schema({
     required: true,
   },
 },
-    { _id: false }
 );
 
-sensorSchema.add(Device);
 
 const Sensor = Device.discriminator("Sensor", sensorSchema);
 

@@ -4,9 +4,10 @@ import session from "express-session";
 import MongoStore from "connect-mongo";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
-import properties from "./properties.json" assert { type: "json" };
 import * as AdminJsMongoose from "@adminjs/mongoose";
-import User from "../models/user.model";
+import db from "../models/index.js";
+import config from "../config/index.js";
+// import properties from "./properties.js";
 
 dotenv.config();
 
@@ -28,7 +29,16 @@ const adminJs = new AdminJS({
       resource: db.User,
       options: {
         navigation: usersNavigation,
-        properties: properties["User"],
+        properties: {
+          email: {
+            isVisible: {
+              list: true,
+              show: true,
+              filter: true,
+              edit: false
+            }
+          },
+        }
       },
     },
     {
@@ -41,30 +51,6 @@ const adminJs = new AdminJS({
       resource: db.Device,
       options: {
         navigation: devicesNavigation,
-      },
-    },
-    {
-      resource: db.Actuator,
-      options: {
-        navigation: devicesNavigation,
-      },
-    },
-    {
-      resource: db.Sensor,
-      options: {
-        navigation: devicesNavigation,
-      },
-    },
-    {
-      resource: db.Group,
-      options: {
-        navigation: automationsNavigation,
-      },
-    },
-    {
-      resource: db.Scenario,
-      options: {
-        navigation: automationsNavigation,
       },
     },
   ],
@@ -81,7 +67,7 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({
-    mongoUrl: "mongodb://localhost:27017/smarthome",
+    mongoUrl: config.mongo_url,
   }),
 });
 
@@ -90,7 +76,7 @@ const router = AdminJsExpress.buildAuthenticatedRouter(
   adminJs,
   {
     authenticate: async (email, password) => {
-      const adminUser = await User.findOne({ email }).exec();
+      const adminUser = await db.User.findOne({ email }).exec();
 
       if (!adminUser || !(await bcrypt.compare(password, adminUser.password))) {
         return null;

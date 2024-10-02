@@ -1,6 +1,5 @@
-import gatewayService from '../services/gateway.service.js';
-import redisClient from '../config/redis.config.js'; // Import Redis client
-import CustomError from '../utils/CustomError.js';
+import * as gatewayService from '../services/gateway.service.js';
+import redisClient from '../config/redis.config.js'; 
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 

@@ -1,5 +1,5 @@
-import Actuator from '../models/actuator.model';
-import Sensor from '../models/sensor.model';
+import Actuator from '../models/actuator.model.js';
+import Sensor from '../models/sensor.model.js';
 
 class DeviceFactory {
   static createDevice(deviceData) {

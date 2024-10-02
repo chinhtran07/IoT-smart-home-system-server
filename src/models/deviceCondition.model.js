@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Condition from "./condition.model";
+import Condition from "./condition.model.js";
 
 const comparators = ["eq", "neq", "gt", "gte", "lt", "lte", "true", "false", "contains"];
 
@@ -18,10 +18,9 @@ const deviceConditionSchema = new mongoose.Schema({
         type: String,
         required: true
     }
-}, { _id: false });
+},);
 
-deviceConditionSchema.add(Condition);
 
-const DeviceCondition = mongoose.model("DeviceCondition", deviceConditionSchema);
+const DeviceCondition = Condition.discriminator("DeviceCondition", deviceConditionSchema);
 
 export default DeviceCondition;

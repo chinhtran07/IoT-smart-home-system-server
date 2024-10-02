@@ -3,14 +3,14 @@ import mongoose from "mongoose";
 const sensorDataScheme = new mongoose.Schema(
   {
     deviceId: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
       required: true,
       unique: true,
     },
-    value: {
-      type: Number,
+    value: [{
+      type: mongoose.Schema.Types.Mixed,
       required: true,
-    },
+    }],
   },
   {
     timeseries: true,

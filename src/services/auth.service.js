@@ -1,5 +1,5 @@
 import config from "../config/index.js";
-import User from "../models/User.js"; // Import the new User model
+import User from "../models/user.model.js"; 
 import jwt from "jsonwebtoken";
 import CustomError from "../utils/CustomError.js";
 

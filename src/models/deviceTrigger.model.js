@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Trigger from "./trigger.model";
+import Trigger from "./trigger.model.js";
 
 const comparators = ["eq", "neq", "gt", "gte", "lt", "lte", "true", "false", "contains"];
 
@@ -18,9 +18,8 @@ const deviceTriggerSchema = new mongoose.Schema({
         type: String,
         required: true
     }
-}, { _id: false });
+},);
 
-deviceTriggerSchema.add(Trigger);
 
 const DeviceTrigger = Trigger.discriminator("DeviceTrigger", deviceTriggerSchema);
 

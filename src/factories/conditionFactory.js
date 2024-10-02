@@ -1,5 +1,5 @@
-import DeviceCondition from "../models/deviceCondition.model";
-import TimeCondition from "../models/timeCondition.model";
+import DeviceCondition from "../models/deviceCondition.model.js";
+import TimeCondition from "../models/timeCondition.model.js";
 
 class ConditionFactory {
   static createCondition(type, conditionData) {

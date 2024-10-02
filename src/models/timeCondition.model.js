@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import Condition from "./condition.model";
+import Condition from "./condition.model.js";
 
 const timeConditionSchema = new mongoose.Schema({
     startTime: {
@@ -10,10 +10,9 @@ const timeConditionSchema = new mongoose.Schema({
         type: String,
         required: true,
     }
-}, { _id: false });
+}, );
 
-timeConditionSchema.add(Condition);
 
-const TimeCondition = mongoose.model("TimeCondition", timeConditionSchema);
+const TimeCondition = Condition.discriminator("TimeCondition", timeConditionSchema);
 
 export default TimeCondition;
