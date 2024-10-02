@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
+import redisClient from "../config/redis.config.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -91,6 +92,8 @@ userSchema.methods.generateAuthToken = async function () {
 
   this.refreshToken = refreshToken;
   await this.save();
+
+  await redisClient.set(token, 'valid');
 
   return { token, refreshToken };
 };

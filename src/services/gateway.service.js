@@ -9,8 +9,10 @@ export const createGateway = async (gatewayData, userId) => {
       ...gatewayData,
       owner: userId
     })
+    
+    const savedGateway = await newGateway.save();
 
-    return newGateway;
+    return savedGateway;
   } catch (error) {
     throw new CustomError(error.message);
   }

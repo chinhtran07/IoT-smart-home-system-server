@@ -5,11 +5,22 @@ import CustomError from "../utils/CustomError.js";
 import redisClient from "../config/redis.config.js";
 
 // Register User Service
-export const registerUser = async (username, password, firstName, lastName, email, phone) => {
+export const registerUser = async ( username, password, firstName, lastName, email, phone ) => {
   try {
     const newUser = new User({ username, password, firstName, lastName, email, phone });
-    await newUser.save();
-    return newUser;
+
+    // Save user and return the user object without sensitive data using `lean()`
+    const savedUser = await newUser.save();
+    
+    const userWithoutSensitiveData = savedUser.toObject({ versionKey: false }); // Exclude __v if needed
+
+    // Remove sensitive fields
+    delete userWithoutSensitiveData.password;
+    delete userWithoutSensitiveData.role;
+    delete userWithoutSensitiveData.googleId;
+    delete userWithoutSensitiveData.refreshToken;
+
+    return userWithoutSensitiveData;
   } catch (error) {
     throw new CustomError(`Failed to register user: ${error.message}`, 400);
   }
@@ -33,11 +44,6 @@ export const refreshAccessToken = async (refreshToken) => {
   }
 
   try {
-    // Check if the token has been revoked
-    const isRevoked = await redisClient.get(refreshToken);
-    if (isRevoked) {
-      throw new CustomError("Unauthorized, token has been revoked", 401);
-    }
 
     // Verify the refresh token
     const decoded = jwt.verify(refreshToken, config.jwt.refresh_secret);
@@ -46,9 +52,6 @@ export const refreshAccessToken = async (refreshToken) => {
     if (!user || user.refreshToken !== refreshToken) {
       throw new CustomError("Invalid refresh token or user not found", 403);
     }
-
-    // Revoke the old refresh token by setting it in Redis with an expiration
-    await redisClient.set(refreshToken, "revoked", 'EX', config.jwt.refresh_token_expiration);
 
     // Generate new access and refresh tokens
     return await user.generateAuthToken();

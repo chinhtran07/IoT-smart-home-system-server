@@ -51,8 +51,6 @@ export const getGatewayById = async (req, res, next) => {
             // Cache the result in Redis
             await redisClient.set(cacheKey, JSON.stringify(gateway), { EX: CACHE_EXPIRY });
             return res.status(200).json(gateway);
-        } else {
-            return res.status(404).json({ message: "Gateway not found" });
         }
     } catch (error) {
         next(error);

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import config from '../config/index.js';
-import User from '../models/user.model.js';
+import redisClient from "../config/redis.config.js";
 import CustomError from '../utils/CustomError.js';
 
 const authenticate = async (req, res, next) => {
@@ -13,12 +13,14 @@ const authenticate = async (req, res, next) => {
   if (!token) return res.status(401).json({message: "missing token"});
 
   try {
+
+    const isRevoked = await redisClient.get(token);
+    if (!isRevoked) {
+        return next(new CustomError("Unauthorized, token has been revoked", 401));
+    }
+    
     const decoded = jwt.verify(token, config.jwt.secret);
-
-    const user = await User.findById(decoded._id);
-    if (!user) return res.status(404).json({message: "User not found"});
-
-    req.user = user; 
+    req.user = decoded; 
     next();
   } catch (error) {
     return next(error);
