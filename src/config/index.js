@@ -9,6 +9,7 @@ const config = {
         secret: process.env.JWT_SECRET,
         refresh_secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '1h',
+        refresh_token_expiration: "7d"
     },
 
     session: {

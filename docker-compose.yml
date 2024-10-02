@@ -4,49 +4,40 @@ services:
     ports:
       - "${PORT}:${PORT}"
     environment:
-      NODE_ENV: development
-      MYSQL_HOST: mysql
-      MYSQL_USER: root
-      MYSQL_PASSWORD: Admin@123
-      MYSQL_DB: smart_home
-      MONGODB_URI: ${MONGO_URI}
+      MONGO_URI: ${MONGO_URI}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_TOKEN: ${JWT_REFRESH_SECRET}
-      REDIS_HOST: redis
+      REDIS_URL: ${REDIS_URL}
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      WSS_PORT: ${WSS_PORT}
+      MQTT_PORT: ${MQTT_PORT}
+      SESSION_SECRET: ${SESSION_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      CLOUD_NAME: ${CLOUD_NAME}
+      API_KEY: ${API_KEY}
+      API_SECRET: ${API_SECRET}
     volumes:
       - .:/app
       - /app/node_modules
     command: npm run dev
     depends_on:
-      - mysql
       - mongo
       - redis
     networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: Admin@123
-      MYSQL_DATABASE: smart_home
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
+      - my_network
 
   mongo:
     image: mongo
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: smarthome
+      MONGO_INITDB_DATABASE: smart-home
     volumes:
       - mongo_data:/data/db
     networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
+      - my_network 
 
   redis:
     image: redis
@@ -55,24 +46,22 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
+      - my_network
 
-  # ngrok:
-  #   image: ngrok/ngrok
-  #   environment:
-  #     NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
-  #     NGROK_PORT: "${PORT}"
-  #   ports:
-  #     - "4040:4040"
-  #   command: http app:${PORT}
-  #   networks:
-  #     - my_network  # Tham gia vào mạng tùy chỉnh
+  ngrok:
+    image: ngrok/ngrok
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+    ports:
+      - "4040:4040"
+    command: http app:${PORT} --url=strong-complete-sculpin.ngrok-free.app
+    networks:
+      - my_network
 
 volumes:
-  mysql_data:
   mongo_data:
   redis_data:
 
 networks:
   my_network:
-    driver: bridge  # Sử dụng driver bridge cho mạng
+    driver: bridge

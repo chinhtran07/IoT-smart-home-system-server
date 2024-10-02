@@ -8,7 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN npx sequelize-cli db:migrate --config src/config/config.json
+# RUN node /scripts/createSuperUser.js
 
 COPY .env .env
 

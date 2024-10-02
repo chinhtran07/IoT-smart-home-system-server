@@ -25,6 +25,8 @@ docker-compose.override.yaml
 # Ignore git files
 .git
 .gitignore
+README.md
+env-example
 
 # Ignore any build artifacts
 dist
