@@ -19,10 +19,10 @@ export const createGateway = async (req, res, next) => {
 
 export const addDevice = async (req, res, next) => {
     try {
-        const deviceData = req.body;
+        const { actions, ...deviceData } = req.body;
         const gatewayId = req.params.id;
         const userId = req.user._id;
-        const device = await gatewayService.addDevice(deviceData, gatewayId, userId);
+        const device = await gatewayService.addDevice(actions, deviceData, gatewayId, userId);
         
         // Clear cache related to the gateway where the device is added
         await redisClient.del(`gateway:${req.params.id}`);
