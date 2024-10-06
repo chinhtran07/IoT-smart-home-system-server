@@ -92,6 +92,7 @@ export const initSocket = async (io) => {
 
     socket.on("disconnect", () => {
       // Cleanup event listeners on disconnect to prevent memory leaks
+      myEmitter.off("deviceControl", handleDeviceControl);
       myEmitter.off("dataReceived", handleDataReceived);
       myEmitter.off("heartbeat", handleHeartbeat);
     });

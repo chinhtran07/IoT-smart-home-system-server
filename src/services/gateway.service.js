@@ -3,7 +3,6 @@ import Gateway from "../models/gateway.model.js";
 import DeviceFactory from "../factories/deviceFactory.js";
 import Action from "../models/action.model.js";
 import axios from "axios";
-import mongoose from "mongoose";
 
 export const createGateway = async (gatewayData, userId) => {
   try {

@@ -18,7 +18,7 @@ router.use('/devices', deviceRoutes);
 router.use('/scenarios', scenarioRoutes);
 router.use('/control', controlRoutes);
 router.use('/access-control', accessControlRoutes);
-router.use('/groups', groupRoutes);
+router.use('/groups',groupRoutes);
 router.use('/scenes', sceneRoutes);
 
 export default router;
