@@ -11,6 +11,7 @@ export const initSocket = async (io) => {
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) return next(new Error("Authentication error"));
       socket.user = user;
+      console.log(socket.id);
       next();
     });
   });
@@ -76,7 +77,16 @@ export const initSocket = async (io) => {
       }
     };
 
+    const handleDeviceControl = async (id, data) => {
+      try {
+        io.to(id).emit("data", data);
+      } catch (err) {
+        console.error("Error at handle control");
+      }
+    }
+
     // Attach event listeners once per socket connection
+    myEmitter.on("deviceControl", handleDeviceControl);
     myEmitter.on("dataReceived", handleDataReceived);
     myEmitter.on("heartbeat", handleHeartbeat);
 

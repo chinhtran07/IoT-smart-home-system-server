@@ -7,7 +7,7 @@ const router = express.Router();
 // Routes for access control
 router.post('/grant', grantPermission);
 router.get('/:userId', getAccessControl);
-router.get('/', getGrantedUsersByOwner);
+router.get('', getGrantedUsersByOwner);
 router.put('/grant/:userId', updateAccessControl);
 router.delete('/revoke', deleteAccessControl);
 

@@ -23,7 +23,7 @@ export const addDeviceToGroup = async (req, res, next) => {
     try {
         const groupId = req.params.id;
         const { deviceIds } = req.body;
-        await groupService.addDeviceToGroup(groupId, deviceIds);
+        await groupService.addDevicesToGroup(groupId, deviceIds);
 
         // Clear the cache for the specific group where devices are added
         await redisClient.del(`group:${groupId}`);

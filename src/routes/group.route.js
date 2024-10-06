@@ -16,7 +16,7 @@ const router = express.Router();
  *       201:
  *         description: Group added successfully
  */
-router.post('/', groupController.addGroup);
+router.post('', groupController.addGroup);
 
 /**
  * @openapi
@@ -29,7 +29,7 @@ router.post('/', groupController.addGroup);
  *       200:
  *         description: List of all groups
  */
-router.get('/', groupController.getAllGroups);
+router.get('', groupController.getAllGroups);
 
 /**
  * @openapi

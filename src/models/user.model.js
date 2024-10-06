@@ -93,7 +93,7 @@ userSchema.methods.generateAuthToken = async function () {
   this.refreshToken = refreshToken;
   await this.save();
 
-  await redisClient.set(token, 'valid');
+  await redisClient.set(token, 'valid', {EX: 3600});
 
   return { token, refreshToken };
 };

@@ -15,7 +15,7 @@ const router = express.Router();
  *       201:
  *         description: Gateway created successfully
  */
-router.post('/', gatewayController.createGateway);
+router.post('', gatewayController.createGateway);
 
 /**
  * @openapi

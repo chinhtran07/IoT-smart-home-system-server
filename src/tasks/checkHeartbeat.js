@@ -4,45 +4,37 @@ import Device from '../models/device.model.js'; // Import the Device model
 
 const checkHeartbeat = async () => {
   try {
-    // Fetch all devices from MongoDB
     const devices = await Device.find({}, { _id: 1, status: 1 });
     const now = new Date();
 
-    // Prepare an array of promises for checking heartbeats
     const checkPromises = devices.map(async (device) => {
       const deviceId = device._id.toString();
 
       try {
-        // Get last heartbeat time from Redis
         const lastHeartbeat = await redisClient.get(`heartbeat:${deviceId}`);
-        console.log(`Last heartbeat for device ${deviceId}: ${lastHeartbeat}`);
 
-        if (lastHeartbeat) {
-          const lastTime = new Date(lastHeartbeat);
-          const diffMinutes = (now - lastTime) / 60000;
+        if (!lastHeartbeat) {
+          return;
+        }
 
-          // Check if the device has been offline for over a minute
-          if (diffMinutes >= 1 && device.status === true) {
-            console.log(`Device ${deviceId} is Offline`);
+        const lastTime = new Date(lastHeartbeat);
+        const diffMinutes = (now - lastTime) / 60000; 
 
-            // Update device status to offline in MongoDB
-            await Device.updateOne({ _id: deviceId }, { status: false });
+        if (diffMinutes >= 1 && device.status === true) {
+          console.log(`Device ${deviceId} is now Offline`);
 
-            const data = {
-              alive: false,
-            };
+          await Device.updateOne({ _id: deviceId }, { status: false });
 
-            // Emit event and remove heartbeat from Redis
-            myEmitter.emit('heartbeat', { device, data });
-            await redisClient.del(`heartbeat:${deviceId}`);
-          }
+          const data = { alive: false };
+
+          myEmitter.emit('heartbeat', { device, data });
+          await redisClient.del(`heartbeat:${deviceId}`);
         }
       } catch (err) {
         console.error(`Error processing heartbeat for device ${deviceId}:`, err);
       }
     });
 
-    // Wait for all heartbeat checks to complete
     await Promise.all(checkPromises);
   } catch (error) {
     console.error('Error checking heartbeat:', error.message);
@@ -52,9 +44,11 @@ const checkHeartbeat = async () => {
 let intervalId;
 
 export const startService = () => {
+  // Start the heartbeat check interval
   intervalId = setInterval(() => {
     checkHeartbeat();
   }, 60000); // Check every minute
 
-  return () => clearInterval(intervalId); // Clear the interval on service stop
+  // Return a function to stop the service by clearing the interval
+  return () => clearInterval(intervalId);
 };

@@ -8,8 +8,6 @@ RUN npm install
 
 COPY . .
 
-# RUN node /scripts/createSuperUser.js
-
 COPY .env .env
 
 EXPOSE 3000
