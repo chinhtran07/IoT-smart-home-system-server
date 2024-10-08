@@ -4,40 +4,44 @@ services:
     ports:
       - "${PORT}:${PORT}"
     environment:
-      MONGO_URI: ${MONGO_URI}
+      NODE_ENV: development
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Admin@123
+      MYSQL_DB: smart_home
+      MONGODB_URI: ${MONGODB_URI}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_TOKEN: ${JWT_REFRESH_SECRET}
-      REDIS_URL: ${REDIS_URL}
+      JWT_REFRESH_TOKEN: ${JWT_REFRESH_TOKEN}
+      REDIS_HOST: redis
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
-      WSS_PORT: ${WSS_PORT}
-      MQTT_PORT: ${MQTT_PORT}
-      SESSION_SECRET: ${SESSION_SECRET}
-      COOKIE_SECRET: ${COOKIE_SECRET}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      CLOUD_NAME: ${CLOUD_NAME}
-      API_KEY: ${API_KEY}
-      API_SECRET: ${API_SECRET}
     volumes:
       - .:/app
       - /app/node_modules
     command: npm run dev
     depends_on:
+      - mysql
       - mongo
       - redis
-    networks:
-      - my_network
+      - ngrok
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: Admin@123
+      MYSQL_DATABASE: smart_home
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
 
   mongo:
     image: mongo
     ports:
       - "27017:27017"
     environment:
-      MONGO_INITDB_DATABASE: smart-home
+      MONGO_INITDB_DATABASE: smarthome
     volumes:
       - mongo_data:/data/db
-    networks:
-      - my_network 
 
   redis:
     image: redis
@@ -45,23 +49,17 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - my_network
 
   ngrok:
-    image: ngrok/ngrok
+    image: wernight/ngrok
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      NGROK_PORT: "${PORT}"
     ports:
       - "4040:4040"
-    command: http app:${PORT} --url=strong-complete-sculpin.ngrok-free.app
-    networks:
-      - my_network
+    command: http app:${PORT}
 
 volumes:
+  mysql_data:
   mongo_data:
   redis_data:
-
-networks:
-  my_network:
-    driver: bridge

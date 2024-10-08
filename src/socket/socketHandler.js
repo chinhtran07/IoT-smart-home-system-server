@@ -1,11 +1,23 @@
-import jwt from "jsonwebtoken";
 import myEmitter from "../events/eventsEmitter.js";
-import SensorData from "../models/sensorData.model.js";
-import Actuator from "../models/actuator.model.js";
+import mongoDB from "../models/mongo/index.js";
+import mysqlDb from "../models/mysql/index.js";
 
 export const initSocket = async (io) => {
+  io.use((socket, next) => {
+    const token = socket.handshake.auth.token;
+    if (token) {
+      jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) return next(new Error('Authentication error'));
+        socket.user = user;
+        next();
+      });
+    } else {
+      next(new Error('Authentication error'));
+    }
+  });
+
   io.on("connection", (socket) => {
-    console.log(`Client connected: ${socket.id}`);
+    console.log("New client connected:", socket.id);
 
     socket.on("subscribe", (deviceId) => {
       console.log(`Client ${socket.id} subscribed to device ${deviceId}`);
@@ -20,36 +32,36 @@ export const initSocket = async (io) => {
     });
 
     socket.on("disconnect", () => {
-      console.log(`Client disconnected: ${socket.id}`);
+      console.log("Client disconnected:", socket.id);
     });
 
-    // Đăng ký các sự kiện trong kết nối socket
     const handleDataReceived = async ({ device, data }) => {
       try {
-        console.log("Data received in handleDataReceived:", data); // Thêm log để kiểm tra dữ liệu
         if (device.type === "sensor") {
-          // Save sensor data
-          await SensorData.create({
+          const sensorData = new mongoDB.SensorData({
             ...data,
             deviceId: device._id,
           });
+          await sensorData.save();
         } else if (device.type === "actuator") {
+            console.log(data);
+          const actuator = await mysqlDb.Actuator.findByPk(device.id);
+          const updatedProperties = { ...actuator.properties };
 
-          // Update properties only if changed
-          const updatedProperties = Object.entries(data).reduce((acc, [key, value]) => {
-            if (device.properties[key] !== value) {
-              acc[key] = value;
+          let hasChanges = false;
+          for (const [key, value] of Object.entries(data)) {
+            if (updatedProperties[key] !== value) {
+              updatedProperties[key] = value;
+              hasChanges = true;
             }
-            return acc;
-          }, {});
+          }
 
-          if (Object.keys(updatedProperties).length) {
-            device.properties = { ...device.properties, ...updatedProperties };
-            await device.save();
+          if (hasChanges) {
+            await actuator.update({ properties: updatedProperties });
           }
         }
 
-        io.to(device._id.toString()).emit("data", data);
+        io.to(device.id.toString()).emit("data", data);
       } catch (err) {
         console.error("Error processing data:", err);
       }
@@ -57,29 +69,16 @@ export const initSocket = async (io) => {
 
     const handleHeartbeat = async ({ device, data }) => {
       try {
-        // Emit heartbeat event to subscribed clients
-        io.to(`heartbeat${device._id}`).emit("heartbeat", data);
+        io.to(`heartbeat${device.id}`).emit("heartbeat", data);
       } catch (error) {
-        console.error("Error emitting heartbeat:", error.message);
+        console.error(error.message);
       }
     };
 
-    const handleDeviceControl = async (id, data) => {
-      try {
-        io.to(id).emit("data", data);
-      } catch (err) {
-        console.error("Error at handle control");
-      }
-    }
-
-    // Đăng ký sự kiện để xử lý dữ liệu và nhịp tim
+    // myEmitter.off('dataReceived', handleDataReceived);
     myEmitter.on("dataReceived", handleDataReceived);
-    myEmitter.on("heartbeat", handleHeartbeat);
 
-    socket.on("disconnect", () => {
-      // Cleanup event listeners on disconnect to prevent memory leaks
-      myEmitter.off("dataReceived", handleDataReceived);
-      myEmitter.off("heartbeat", handleHeartbeat);
-    });
+    // myEmitter.off('heartbeat', handleHeartbeat);
+    myEmitter.on("heartbeat", handleHeartbeat);
   });
 };

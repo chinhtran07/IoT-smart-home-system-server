@@ -1,4 +1,4 @@
-import * as deviceService from '../services/device.service.js'; 
+import * as deviceService from '../services/device.services.js'; 
 import redisClient from '../config/redis.config.js'; // Import Redis client
 import CustomError from '../utils/CustomError.js';
 
@@ -6,8 +6,19 @@ const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
 export const getAllDevices = async (req, res, next) => {
     try {
+        const cacheKey = 'allDevices';
 
+        // Try to fetch from Redis cache first
+        const cachedDevices = await redisClient.get(cacheKey);
+        if (cachedDevices) {
+            return res.status(200).json(JSON.parse(cachedDevices));
+        }
+
+        // If not found in cache, fetch from database
         const devices = await deviceService.getAllDevices();
+
+        // Cache the result in Redis
+        await redisClient.set(cacheKey, JSON.stringify(devices), { EX: CACHE_EXPIRY });
 
         res.status(200).json(devices);
     } catch (error) {
@@ -80,7 +91,7 @@ export const deleteDevice = async (req, res, next) => {
 
 export const getDevicesOwner = async (req, res, next) => {
     try {
-        const userId = req.user._id;
+        const userId = req.user.id;
         const page = req.query.page || 1;
         const limit = req.query.limit || 10;
         const cacheKey = `devicesOwner:${userId}:${page}:${limit}`;

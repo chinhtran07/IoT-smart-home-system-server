@@ -9,35 +9,13 @@ const config = {
         secret: process.env.JWT_SECRET,
         refresh_secret: process.env.JWT_REFRESH_SECRET,
         expiresIn: '1h',
-        refresh_token_expiration: "7d"
-    },
-
-    session: {
-        secret: process.env.SESSION_SECRET
-    },
-
-    cookie: {
-        secret: process.env.COOKIE_SECRET
-    },
-
-    google: {
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET
-    },
-    cloudinary: {
-        name: process.env.CLOUD_NAME,
-        api_key: process.env.API_KEY,
-        api_secret: process.env.API_SECRET
     },
     mqtt: {
-        port: process.env.MQTT_PORT,
+        port: 1883,
     },
     wss: {
-        port: process.env.WSS_PORT,
+        port: 8081,
     },
-    redis: {
-        url: process.env.REDIS_URL
-    }
 };
 
 export default config;
