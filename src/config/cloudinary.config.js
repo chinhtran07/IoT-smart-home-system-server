@@ -1,11 +1,11 @@
 import { v2 as cloudinary } from "cloudinary";
-import config from "./index.js";
 
 cloudinary.config({
-  cloud_name: config.cloudinary.name,
-  api_key: config.cloudinary.api_key,
-  api_secret: config.cloudinary.api_secret,
-  secure: true,
+  cloud_name: "dk4uoxtsx",
+  api_key: "847486433746269",
+    api_secret: "1BeOWgqFyGFTG-AaRhM5S3-v8Pk",
+  secure: true
 });
+
 
 export default cloudinary;

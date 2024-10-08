@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Device from "./device.model.js";
 
+
 const sensorSchema = new mongoose.Schema({
   detailedType: {
     type: String,

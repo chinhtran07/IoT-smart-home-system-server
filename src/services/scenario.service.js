@@ -1,90 +1,132 @@
+import {v4 as uuidv4} from "uuid";
+import mysqlDb from "../models/mysql/index.js";
 import CustomError from "../utils/CustomError.js";
 import { createFlow, updateFlow, deleteFlow } from "../node-red/index.js";
-import Scenario from "../models/scenario.model.js";
-import TriggerFactory from "../factories/triggerFactory.js";
-import ConditionFactory from "../factories/conditionFactory.js";
-import { getGatewayByUser } from "./gateway.service.js";
-import Condition from "../models/condition.model.js";
-import Trigger from "../models/trigger.model.js";
-import Action from "../models/action.model.js"; // Ensure Action model is imported
 
 export const createScenario = async (data, userId) => {
-  const session = await Scenario.startSession();
-  session.startTransaction();
+  const transaction = await mysqlDb.sequelize.transaction();
 
   try {
-    const scenario = new Scenario({
-      name: data.name,
-      userId,
-      isEnabled: data.isEnabled || true,
+    const scenario = await mysqlDb.Scenario.create(
+      {
+        name: data.name,
+        userId,
+        isEnabled: data.isEnabled || true,
+      },
+      { transaction }
+    );
+
+    await Promise.all([
+      processTriggers(data.triggers, scenario.id, transaction),
+      processConditions(data.conditions, scenario.id, transaction),
+    ]);
+
+    await processActions(data.actions, scenario.id, transaction);
+    const gateway = await mysqlDb.Gateway.findOne({
+      where: { userId },
+      attributes: ["ipAddress"],
     });
 
-    await scenario.save({ session });
+    if (!gateway) {
+      throw new CustomError("Gateway not found for user", 404);
+    }
 
-    const triggers = await Promise.all(
-      data.triggers.map(trigger => 
-        TriggerFactory.createTrigger(trigger.type, { ...trigger, scenarioId: scenario._id })
-      )
-    );
-
-    const conditions = await Promise.all(
-      data.conditions.map(condition => 
-        ConditionFactory.createCondition(condition.type, { ...condition, scenarioId: scenario._id })
-      )
-    );
-
-    scenario.triggers = triggers.map(t => t._id);
-    scenario.conditions = conditions.map(c => c._id);
-    scenario.actions = data.actions;
-
-    await scenario.save({ session });
-
-    const actionJson = data.actions; // Assuming actions are just IDs
-    const gateway = await getGatewayByUser(userId);
+    const actionJson = await transformActions(data.actions);
 
     const scenarioJson = {
-      id: scenario._id,
+      id: scenario.id,
       name: scenario.name,
       isEnabled: scenario.isEnabled,
       actions: actionJson,
-      triggers,
-      conditions,
+      triggers: transformTriggers(data.triggers),
+      conditions: transformConditions(data.conditions),
     };
 
     const res = await createFlow(gateway.ipAddress, scenarioJson);
-    if (res.status === 200) {
-      await session.commitTransaction();
-    }
+
+    if (res.status === 200) await transaction.commit();
 
     return scenario;
   } catch (error) {
-    await session.abortTransaction();
+    await transaction.rollback();
     throw new CustomError(error.message, 400);
-  } finally {
-    session.endSession();
   }
 };
 
 export const getScenarioById = async (scenarioId) => {
   try {
-    const scenario = await Scenario.findById(scenarioId)
-      .populate({ path: "actions", select: ["id", "deviceId", "property", "value"] })
-      .populate({
-        path: "triggers",
-        select: ["id", "type"],
-        populate: { path: "deviceId", model: "Device", select: ["id", "name"] },
-      })
-      .populate({
-        path: "conditions",
-        select: ["id", "type"],
-        populate: { path: "deviceId", model: "Device", select: ["id", "name"] },
-      });
+    const scenario = await mysqlDb.Scenario.findByPk(scenarioId, {
+      include: [
+        {
+          model: mysqlDb.Action,
+          attributes: ["id", "deviceId", "property", "value"],
+        },
+      ],
+      attributes: ["id", "name", "isEnabled"],
+    });
 
     if (!scenario) {
       throw new CustomError("Scenario not found", 404);
     }
 
-    return scenario;
+    const [triggers, conditions] = await Promise.all([
+      mysqlDb.Trigger.findAll({
+        where: { scenarioId },
+        attributes: ["id", "type"],
+      }),
+      mysqlDb.Condition.findAll({
+        where: { scenarioId },
+        attributes: ["id", "type"],
+      }),
+    ]);
+
+    const triggerIds = triggers.map((trigger) => trigger.id);
+    const conditionIds = conditions.map((condition) => condition.id);
+
+    const [deviceTriggers, timeTriggers, deviceConditions, timeConditions] =
+      await Promise.all([
+        mysqlDb.DeviceTrigger.findAll({
+          where: { id: triggerIds },
+          attributes: { exclude: ["updatedAt"] },
+        }),
+        mysqlDb.TimeTrigger.findAll({
+          where: { id: triggerIds },
+          attributes: { exclude: ["updatedAt"] },
+        }),
+        mysqlDb.DeviceCondition.findAll({ where: { id: conditionIds } }),
+        mysqlDb.TimeCondition.findAll({ where: { id: conditionIds } }),
+      ]);
+
+    const formattedTriggers = triggers.map((trigger) => {
+      const triggerData = trigger.toJSON();
+      return {
+        ...triggerData,
+        detail:
+          (triggerData.type === "device"
+            ? deviceTriggers.find((dt) => dt.id === trigger.id)
+            : timeTriggers.find((tt) => tt.id === trigger.id)) || null,
+      };
+    });
+
+    const formattedConditions = conditions.map((condition) => {
+      const conditionData = condition.toJSON();
+      return {
+        ...conditionData,
+        detail:
+          (conditionData.type === "device"
+            ? deviceConditions.find((dc) => dc.id === condition.id)
+            : timeConditions.find((tc) => tc.id === condition.id)) || null,
+      };
+    });
+
+    return {
+      id: scenario.id,
+      name: scenario.name,
+      isEnabled: scenario.isEnabled,
+      actions: scenario.Actions.map((action) => action.toJSON()),
+      triggers: formattedTriggers,
+      conditions: formattedConditions,
+    };
   } catch (error) {
     throw new CustomError(error.message, 500);
   }
@@ -92,116 +134,301 @@ export const getScenarioById = async (scenarioId) => {
 
 export const getScenariosByUser = async (userId) => {
   try {
-    return await Scenario.find({ userId }).select("id name isEnabled");
+    return await mysqlDb.Scenario.findAll({
+      where: { userId },
+      attributes: ["id", "name", "isEnabled"],
+    });
   } catch (error) {
     throw new CustomError(error.message, 500);
   }
 };
 
 export const updateScenario = async (scenarioId, data) => {
-  const session = await Scenario.startSession();
-  session.startTransaction();
+  const transaction = await mysqlDb.sequelize.transaction();
 
   try {
-    const scenario = await Scenario.findById(scenarioId).session(session);
-    
-    if (!scenario) {
-      throw new CustomError("Scenario not found", 404);
-    }
-
-    // Update triggers
-    const updatedTriggers = await Promise.all(
-      data.triggers.map(trigger => updateOrCreateTrigger(trigger, scenario._id, session))
-    );
-
-    // Update conditions
-    const updatedConditions = await Promise.all(
-      data.conditions.map(condition => updateOrCreateCondition(condition, scenario._id, session))
-    );
-
-    Object.assign(scenario, {
-      name: data.name,
-      isEnabled: data.isEnabled,
-      triggers: updatedTriggers.map(t => t._id),
-      conditions: updatedConditions.map(c => c._id),
-      actions: data.actions,
+    const scenario = await mysqlDb.Scenario.findByPk(scenarioId, {
+      transaction,
     });
-
-    await scenario.save({ session });
-
-    const actionJson = await Action.find({ _id: { $in: data.actions.map(action => action.id) } }).session(session);
-    const gateway = await getGatewayByUser(scenario.userId);
-
-    const scenarioJson = {
-      id: scenario._id,
-      name: scenario.name,
-      isEnabled: scenario.isEnabled,
-      actions: actionJson,
-      triggers: updatedTriggers,
-      conditions: updatedConditions,
-    };
-
-    const res = await updateFlow(gateway.ipAddress, scenarioJson, scenarioId);
-    if (res.status === 204) {
-      await session.commitTransaction();
-    }
-
-    return scenario;
-  } catch (error) {
-    await session.abortTransaction();
-    throw new CustomError(error.message, 500);
-  } finally {
-    session.endSession();
-  }
-};
-
-// Helper functions to update or create triggers and conditions
-const updateOrCreateTrigger = async (trigger, scenarioId, session) => {
-  const existingTrigger = await Trigger.findOne({ id: trigger.id, scenarioId }).session(session);
-  if (existingTrigger) {
-    Object.assign(existingTrigger, trigger);
-    return existingTrigger.save({ session });
-  }
-  return TriggerFactory.createTrigger(trigger.type, { ...trigger, scenarioId });
-};
-
-const updateOrCreateCondition = async (condition, scenarioId, session) => {
-  const existingCondition = await Condition.findOne({ id: condition.id, scenarioId }).session(session);
-  if (existingCondition) {
-    Object.assign(existingCondition, condition);
-    return existingCondition.save({ session });
-  }
-  return ConditionFactory.createCondition(condition.type, { ...condition, scenarioId });
-};
-
-export const deleteScenario = async (scenarioId) => {
-  const session = await Scenario.startSession();
-  session.startTransaction();
-
-  try {
-    const scenario = await Scenario.findById(scenarioId).session(session);
     if (!scenario) {
       throw new CustomError("Scenario not found", 404);
     }
 
     await Promise.all([
-      Trigger.deleteMany({ scenarioId }, { session }),
-      Condition.deleteMany({ scenarioId }, { session }),
+      processTriggers(data.triggers, scenario.id, transaction),
+      processConditions(data.conditions, scenario.id, transaction),
+      processActions(data.actions, scenario.id, transaction),
     ]);
 
-    const gateway = await getGatewayByUser(scenario.userId);
-    const res = await deleteFlow(gateway.ipAddress, scenarioId);
+    const updatedScenario = await scenario.update(
+      {
+        name: data.name,
+        isEnabled: data.isEnabled,
+      },
+      { transaction }
+    );
 
-    if (res.status === 204) {
-      await scenario.remove({ session });
-      await session.commitTransaction();
+    const gateway = await mysqlDb.Gateway.findOne({
+      where: { userId },
+      attributes: ["ipAddress"],
+    });
+
+    if (!gateway) {
+      throw new CustomError("Gateway not found for user", 404);
     }
 
-    return { message: "Scenario deleted successfully" };
+    const scenarioJson = {
+      id: updatedScenario.id,
+      name: updatedScenario.name,
+      isEnabled: updatedScenario.isEnabled,
+      actions: await transformActions(data.actions),
+      triggers: transformTriggers(data.triggers),
+      conditions: transformConditions(data.conditions),
+    };
+
+    const res = await updateFlow(gateway.ipAddress, scenarioJson, scenarioId);
+
+    if (res.status === 204) await transaction.commit();
+
+    return updatedScenario;
   } catch (error) {
-    await session.abortTransaction();
+    await transaction.rollback();
     throw new CustomError(error.message, 500);
-  } finally {
-    session.endSession();
   }
 };
+
+const processTriggers = async (triggers, scenarioId, transaction) => {
+  const triggerPromises = triggers.map(async (trigger) => {
+    if (trigger.id) {
+      await mysqlDb.Trigger.update(trigger, {
+        where: { id: trigger.id },
+        transaction,
+      });
+
+      if (trigger.type === "time") {
+        await mysqlDb.TimeTrigger.upsert(
+          {
+            id: trigger.id,
+            startTime: trigger.startTime,
+            endTime: trigger.endTime,
+          },
+          { transaction }
+        );
+      } else if (trigger.type === "device") {
+        await mysqlDb.DeviceTrigger.upsert(
+          {
+            id: trigger.id,
+            deviceId: trigger.deviceId,
+            comparator: trigger.comparator,
+            deviceStatus: trigger.deviceStatus,
+          },
+          { transaction }
+        );
+      }
+    } else {
+      const newTrigger = await mysqlDb.Trigger.create(
+        { ...trigger, scenarioId },
+        { transaction }
+      );
+
+      if (trigger.type === "time") {
+        await mysqlDb.TimeTrigger.create(
+          {
+            id: newTrigger.id,
+            startTime: trigger.startTime,
+            endTime: trigger.endTime,
+          },
+          { transaction }
+        );
+      } else if (trigger.type === "device") {
+        await mysqlDb.DeviceTrigger.create(
+          {
+            id: newTrigger.id,
+            deviceId: trigger.deviceId,
+            comparator: trigger.comparator,
+            deviceStatus: trigger.deviceStatus,
+          },
+          { transaction }
+        );
+      }
+    }
+  });
+
+  await Promise.all(triggerPromises);
+};
+
+const processConditions = async (conditions, scenarioId, transaction) => {
+  const conditionPromises = conditions.map(async (condition) => {
+    if (condition.id) {
+      await mysqlDb.Condition.update(condition, {
+        where: { id: condition.id },
+        transaction,
+      });
+
+      if (condition.type === "time") {
+        await mysqlDb.TimeCondition.upsert(
+          {
+            id: condition.id,
+            startTime: condition.startTime,
+            endTime: condition.endTime,
+          },
+          { transaction }
+        );
+      } else if (condition.type === "device") {
+        await mysqlDb.DeviceCondition.upsert(
+          {
+            id: condition.id,
+            deviceId: condition.deviceId,
+            comparator: condition.comparator,
+            deviceStatus: condition.deviceStatus,
+          },
+          { transaction }
+        );
+      }
+    } else {
+      const newCondition = await mysqlDb.Condition.create(
+        { ...condition, scenarioId },
+        { transaction }
+      );
+
+      if (condition.type === "time") {
+        await mysqlDb.TimeCondition.create(
+          {
+            id: newCondition.id,
+            startTime: condition.startTime,
+            endTime: condition.endTime,
+          },
+          { transaction }
+        );
+      } else if (condition.type === "device") {
+        await mysqlDb.DeviceCondition.create(
+          {
+            id: newCondition.id,
+            deviceId: condition.deviceId,
+            comparator: condition.comparator,
+            deviceStatus: condition.deviceStatus,
+          },
+          { transaction }
+        );
+      }
+    }
+  });
+
+  await Promise.all(conditionPromises);
+};
+
+const processActions = async (actions, scenarioId, transaction) => {
+  const existingActionLinks = await mysqlDb.ActionScenario.findAll({
+    where: { scenarioId: scenarioId },
+    attributes: ["actionId"],
+    transaction,
+  });
+
+  const existingActionIds = existingActionLinks.map((link) => link.actionId);
+
+  const actionsToAdd = actions.filter((id) => !existingActionIds.includes(id));
+  const actionsToRemove = existingActionIds.filter(
+    (id) => !actions.includes(id)
+  );
+
+  const addPromises = actionsToAdd.map((actionId) =>
+    mysqlDb.ActionScenario.create(
+      { actionId: actionId, scenarioId },
+      { transaction }
+    )
+  );
+
+  const removePromises = actionsToRemove.map((actionId) =>
+    mysqlDb.ActionScenario.destroy({
+      where: { actionId, scenarioId },
+      transaction,
+    })
+  );
+
+  await Promise.all([...addPromises, ...removePromises]);
+};
+
+export const deleteScenario = async (scenarioId) => {
+  const transaction = await mysqlDb.sequelize.transaction();
+
+  try {
+    const scenario = await mysqlDb.Scenario.findByPk(scenarioId, {
+      transaction,
+    });
+    if (!scenario) {
+      throw new CustomError("Scenario not found", 404);
+    }
+
+    await Promise.all([
+      mysqlDb.Trigger.destroy({ where: { scenarioId }, transaction }),
+      mysqlDb.Condition.destroy({ where: { scenarioId }, transaction }),
+      mysqlDb.Action.destroy({ where: { scenarioId }, transaction }),
+    ]);
+
+    const gateway = await mysqlDb.Gateway.findOne({
+      where: { userId },
+      attributes: ["ipAddress"],
+    });
+
+    if (!gateway) {
+      throw new CustomError("Gateway not found for user", 404);
+    }
+
+    const res = await deleteFlow(gateway.ipAddress, scenarioId);
+
+    if (res.status === 204) await scenario.destroy({ transaction });
+
+    await transaction.commit();
+    return { message: "Scenario deleted successfully" };
+  } catch (error) {
+    await transaction.rollback();
+    throw new CustomError(error.message, 500);
+  }
+};
+
+const transformActions = async (actionIds) => {
+  try {
+    const actions = await mysqlDb.Action.findAll({
+      where: { id: actionIds },
+      attributes: { exclude: ["id", "createdAt", "updatedAt", "description"] },
+    });
+
+    return actions.map((action) => action.toJSON());
+  } catch (error) {
+    throw new Error(`Error transforming actions: ${error.message}`);
+  }
+};
+
+const transformTriggers = (triggers) =>
+  triggers.map((trigger) => ({
+    id: uuidv4(),
+    type: trigger.type,
+    detail:
+      trigger.type === "device"
+        ? {
+            deviceId: trigger.deviceId,
+            comparator: trigger.comparator,
+            deviceStatus: trigger.deviceStatus,
+          }
+        : {
+            startTime: trigger.startTime,
+            endTime: trigger.endTime,
+          },
+  }));
+
+const transformConditions = (conditions) =>
+  conditions.map((condition) => ({
+    id: uuidv4(),
+    type: condition.type,
+    detail:
+      condition.type === "device"
+        ? {
+            deviceId: condition.deviceId,
+            comparator: condition.comparator,
+            deviceStatus: condition.deviceStatus,
+          }
+        : {
+            startTime: condition.startTime,
+            endTime: condition.endTime,
+          },
+  }));

@@ -1,91 +1,152 @@
-import CustomError from "../utils/CustomError.js";
-import Scene from "../models/scene.model.js";
+import CustomError from "../utils/CustomError.js"
+import db from "../models/mysql/index.js";
 
-// Utility function to handle transactions
-const withTransaction = async (callback) => {
-  const session = await Scene.startSession();
-  session.startTransaction();
-  try {
-    const result = await callback(session);
-    await session.commitTransaction();
-    return result;
-  } catch (error) {
-    await session.abortTransaction();
-    throw new CustomError(error.message);
-  } finally {
-    session.endSession();
-  }
+export const createScene = async (userId, name, description, actions) => {
+    const transaction = await db.sequelize.transaction();
+    try {
+        const newScene = await db.Scene.create({
+            name,
+            description,
+            userId,
+        });
+
+        if (actions && actions.length > 0) {
+            const actionSceneData = actions.map(actionId => ({
+                actionId,
+                sceneId: newScene.id,
+            }));
+
+            await db.ActionScene.bulkCreate(actionSceneData, {transaction});
+        }
+
+        await transaction.commit();
+        return newScene;
+    } catch (error) {
+        await transaction.rollback();
+        throw new CustomError(error.message);
+    }
 };
 
-// Create a new scene and associate actions
-export const createScene = async (userId, name, description, actions = []) => {
-  return withTransaction(async (session) => {
-    const newScene = new Scene({ userId, name, description, actions }, { session });
-    return newScene; 
-  });
-};
-
-// Get all scenes for a user and include associated actions
 export const getScenesByUser = async (userId) => {
-  try {
-    return await Scene.find({ userId }).populate("actions");
-  } catch (error) {
-    throw new CustomError(error.message);
-  }
+    try {
+        const scenes = await db.Scene.findAll({
+            where: { userId },
+            include: {
+                model: db.ActionScene,
+                include: [db.Action], 
+            },
+        });
+
+        return scenes;
+    } catch (error) {
+        throw new CustomError(error.message);
+    }
 };
 
-// Get detailed scene information by sceneId
+
 export const getDetailScene = async (sceneId) => {
-  try {
-    const scene = await Scene.findById(sceneId).populate("actions");
-    if (!scene) throw new CustomError("Scene not found", 404);
-    return scene;
-  } catch (error) {
-    throw new CustomError(error.message);
-  }
+    try {
+        const scene = await db.Scene.findOne({
+            where: { id: sceneId },
+            include: {
+                model: db.scene_actions,
+                include: [db.Action],
+            },
+        });
+
+        if (!scene) {
+            throw new CustomError('Scene not found', 404);
+        }
+
+        return scene;
+    } catch (error) {
+        throw new CustomError(error.message);
+    }
 };
 
-export const updateScene = async (sceneId, updateData) => {
-    return withTransaction(async (session) => {
-      const scene = await Scene.findById(sceneId).session(session);
-      if (!scene) throw new CustomError("Scene not found", 404);
-  
-      const { actions: newActionIds = [], ...otherUpdates } = updateData;
-      Object.assign(scene, otherUpdates);
-  
-      if (newActionIds.length > 0) {
-        const currentActionSet = new Set(scene.actions.map(String));
-  
-        const actionsToAdd = newActionIds.filter(id => !currentActionSet.has(id));
-        const actionsToKeep = newActionIds.filter(id => currentActionSet.has(id));
-  
-        scene.actions = [...actionsToKeep, ...actionsToAdd];
-      }
-  
-      await scene.save({ session });
-      return scene;
-    });
-  };
-  
+export const updateScene = async (sceneId, updates, newActionIds) => {
+    const transaction = await db.sequelize.transaction(); 
+    try {
+        const [updatedCount, [updatedScene]] = await db.Scene.update(updates, {
+            where: { id: sceneId },
+            returning: true,
+            transaction, 
+        });
 
-// Delete a scene and its associated actions
+        if (updatedCount === 0) {
+            throw new CustomError('Scene not found or no changes made');
+        }
+
+        const currentActions = await db.ActionScene.findAll({
+            where: { sceneId: updatedScene.id },
+            attributes: ['actionId'],
+            transaction,
+        });
+
+        const currentActionIds = currentActions.map(action => action.actionId);
+
+        const actionIdsToAdd = newActionIds.filter(actionId => !currentActionIds.includes(actionId));
+        const actionIdsToRemove = currentActionIds.filter(actionId => !newActionIds.includes(actionId));
+
+        if (actionIdsToAdd.length > 0) {
+            await db.ActionScene.bulkCreate(actionIdsToAdd.map(actionId => ({
+                sceneId: updatedScene.id,
+                actionId,
+            })), { transaction });
+        }
+
+        if (actionIdsToRemove.length > 0) {
+            await db.ActionScene.destroy({
+                where: {
+                    sceneId: updatedScene.id,
+                    actionId: actionIdsToRemove,
+                },
+                transaction,
+            });
+        }
+
+        await transaction.commit(); 
+        return updatedScene;
+    } catch (error) {
+        await transaction.rollback();
+        throw new CustomError(error.message);
+    }
+};
+
 export const deleteScene = async (sceneId) => {
-  return withTransaction(async (session) => {
-    const scene = await Scene.findByIdAndDelete(sceneId, { session });
-    if (!scene) throw new CustomError("Scene not found", 404);
-  });
+    const transaction = await db.sequelize.transaction(); 
+
+    try {
+        await db.scene_actions.destroy({
+            where: { sceneId },
+            transaction,
+        });
+
+        const deletedCount = await db.Scene.destroy({
+            where: { id: sceneId },
+            transaction,
+        });
+
+        if (deletedCount === 0) {
+            throw new CustomError('Scene not found', 404);
+        }
+
+        await transaction.commit();
+    } catch (error) {
+        await transaction.rollback();
+        throw new CustomError(error.message);
+    }
 };
 
-// Toggle the active state of a scene
 export const controlScene = async (sceneId) => {
-  try {
-    const scene = await Scene.findById(sceneId);
-    if (!scene) throw new CustomError("Scene not found", 404);
+    try {
+        const scene = await db.Scene.findByPk(sceneId);
 
-    scene.isActive = !scene.isActive;
-    await scene.save();
-    return scene;
-  } catch (error) {
-    throw new CustomError(error.message);
-  }
-};
+        scene.active = !scene.active;
+
+        await scene.save();
+        return scene;
+    } catch (error) {
+        throw new CustomError(error.message);
+    }
+}

@@ -2,15 +2,18 @@ import CustomError from "../utils/CustomError.js";
 import Gateway from "../models/gateway.model.js";
 import DeviceFactory from "../factories/deviceFactory.js";
 import Action from "../models/action.model.js";
+import axios from "axios";
 
 export const createGateway = async (gatewayData, userId) => {
   try {
     const newGateway = new Gateway({
       ...gatewayData,
-      owner: userId
-    })
+      owner: userId,
+    });
 
-    return newGateway;
+    const savedGateway = await newGateway.save();
+
+    return savedGateway;
   } catch (error) {
     throw new CustomError(error.message);
   }
@@ -31,7 +34,9 @@ export const getGatewayById = async (id) => {
 
 export const getGatewayByUser = async (userId) => {
   try {
-    const gateways = await Gateway.find({ owner: userId }).select("id name status");
+    const gateways = await Gateway.find({ owner: userId }).select(
+      "id name status"
+    );
 
     if (!gateways.length) {
       throw new CustomError("No gateways found for this user", 404);
@@ -43,7 +48,7 @@ export const getGatewayByUser = async (userId) => {
   }
 };
 
-export const addDevice = async (deviceData, gatewayId, userId) => {
+export const addDevice = async (actions, deviceData, gatewayId, userId) => {
   try {
     const gateway = await Gateway.findById(gatewayId);
     if (!gateway) throw new CustomError("Gateway not found", 404);
@@ -51,14 +56,14 @@ export const addDevice = async (deviceData, gatewayId, userId) => {
     const device = DeviceFactory.createDevice({
       ...deviceData,
       gatewayId,
-      owner: userId
+      owner: userId,
     });
 
     await device.save();
 
-    if (deviceData.type === "actuator" && deviceData.actions) {
-      const actionsPromises = deviceData.actions.map(actionData =>
-        new Action({ deviceId: device._id, ...actionData })
+    if (deviceData.type === "actuator" && actions) {
+      const actionsPromises = actions.map(
+        (actionData) => new Action({ deviceId: device._id, ...actionData }).save()
       );
 
       device.actions = await Promise.all(actionsPromises);
@@ -68,9 +73,22 @@ export const addDevice = async (deviceData, gatewayId, userId) => {
     gateway.devices.push(device._id);
     await gateway.save();
 
-    return device;
+    const res = await axios.post(
+      `http://${gateway.ipAddress}:1880/send-broker`,
+      JSON.stringify({ ipAddress: `${deviceData.ipAddress}` }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
+    if (res.status !== 200) {
+      throw new CustomError("Failed to notify MQTT", res.status);
+    }
+
+    return device;
   } catch (error) {
     throw error;
   }
-}
+};

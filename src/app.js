@@ -7,12 +7,14 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swaggerConfig.js";
 import * as authMiddleware from "./middlewares/auth.middleware.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
-import authRoutes from "./routes/auth.route.js";
+import authRoutes from "./routes/auth.routes.js";
 import apiRoutes from "./routes/index.js";
 import { adminJs, router, sessionMiddleware } from './admin/admin.js';
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import session from "express-session";
+import mysqlDb from "./models/mysql/index.js";
+import multer from "multer";
 
 const app = express();
 

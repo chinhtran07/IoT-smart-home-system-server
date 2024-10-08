@@ -1,7 +1,7 @@
-import CustomError from '../utils/CustomError.js';
-import Device from '../models/device.model.js'; 
-import Gateway from '../models/gateway.model.js'; 
-import AccessControl from '../models/accessControl.model.js'; 
+import CustomError from "../utils/CustomError.js";
+import Device from "../models/device.model.js";
+import AccessControl from "../models/accessControl.model.js";
+import mongoose from "mongoose";
 
 export const getAllDevices = async () => {
   try {
@@ -30,7 +30,7 @@ export const updateDevice = async (id, dataToUpdate) => {
       throw new CustomError("Device not found", 404);
     }
     const updatedDevice = await device.updateOne(dataToUpdate); // Update the device
-    return updatedDevice; 
+    return updatedDevice;
   } catch (error) {
     throw new CustomError(error.message);
   }
@@ -48,32 +48,48 @@ export const deleteDevice = async (id) => {
     throw new CustomError(error.message);
   }
 };
-
 export const getDevicesOwner = async (userId, page = 1, limit = 10) => {
   try {
-    const gateways = await Gateway.find({ owner: userId });
-    const gatewayIds = gateways.map(gateway => gateway._id);
     const offset = (page - 1) * limit;
 
-    const devices = await Device.find({ gatewayId: { $in: gatewayIds } })
-      .skip(offset)
-      .limit(limit)
-      .select(['_id', 'name', 'type', 'status']); // Specify attributes to return
+    // Convert userId to ObjectId
+    const objectIdUserId = new mongoose.Types.ObjectId(userId);
 
-    const count = await Device.countDocuments({ gatewayId: { $in: gatewayIds } });
+    const [result] = await Device.aggregate([
+      { $match: { owner: objectIdUserId } },
+      {
+        $facet: {
+          devices: [
+            { $skip: offset },
+            { $limit: limit },
+            { $project: { _id: 1, name: 1, type: 1, status: 1 } },
+          ],
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+
+    const total =result?.totalCount?.length > 0 ? result.totalCount[0].count : 0;
+    const totalPages = Math.ceil(total / limit);
+
+    console.log(result);
 
     return {
-      total: count,
-      devices,
-      totalPages: Math.ceil(count / limit),
-      currentPage: page
+      total,
+      devices: result.devices || [],
+      totalPages,
+      currentPage: page,
     };
   } catch (error) {
     throw new CustomError(error.message);
   }
 };
 
-export const getDevicesByAccessControl = async (userId, page = 1, limit = 10) => {
+export const getDevicesByAccessControl = async (
+  userId,
+  page = 1,
+  limit = 10
+) => {
   try {
     const accessControl = await AccessControl.findOne({ userId });
     if (!accessControl) {
@@ -81,8 +97,8 @@ export const getDevicesByAccessControl = async (userId, page = 1, limit = 10) =>
     }
 
     const deviceIds = accessControl.permissions
-      .filter(permission => permission.device)
-      .map(permission => permission.device);
+      .filter((permission) => permission.device)
+      .map((permission) => permission.device);
 
     const offset = (page - 1) * limit;
 
@@ -96,7 +112,7 @@ export const getDevicesByAccessControl = async (userId, page = 1, limit = 10) =>
       total: count,
       devices,
       totalPages: Math.ceil(count / limit),
-      currentPage: page
+      currentPage: page,
     };
   } catch (error) {
     throw new CustomError(error.message);

@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import Device from "./device.model.js";
+import {onDeviceCreated} from "../mqtt/mqttManager.js";
 
 // Define the Actuator schema
 const actuatorSchema = new mongoose.Schema({
@@ -16,6 +17,7 @@ const actuatorSchema = new mongoose.Schema({
     ref: "Action",
   }],
 });
+
 
 const Actuator = Device.discriminator("Actuator", actuatorSchema);
 

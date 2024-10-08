@@ -1,34 +1,30 @@
 import { connectToGateway, clients } from './mqttClient.js';
-import Gateway from "../models/gateway.model.js"; 
+import mysqlDb from '../models/mysql/index.js';
 
 const connectToGateways = async (gatewayIds = []) => {
     try {
-        // If specific gateway IDs are provided, filter by them; otherwise, fetch all gateways
-        const query = gatewayIds.length > 0 ? { _id: { $in: gatewayIds } } : {};
-        const gateways = await Gateway.find(query); // Use find with a dynamic query
+        const gateways = gatewayIds.length > 0
+            ? await mysqlDb.Gateway.findAll({ where: { id: gatewayIds } })
+            : await mysqlDb.Gateway.findAll();
 
-        await Promise.all(gateways.map(gateway => connectToGateway(gateway))); // Connect to all gateways in parallel
+        for (const gateway of gateways) {
+            await connectToGateway(gateway);
+        }
     } catch (err) {
         console.error('Error connecting to gateways:', err);
     }
 };
 
 const onGatewayCreated = async (gateway) => {
-    // Check if client for the gateway is not already connected
-    if (!clients[gateway._id]) {
-        await connectToGateways([gateway._id]); // Connect to the newly created gateway
+    if (!clients[gateway.id]) {
+        await connectToGateways([gateway.id]);
     }
 };
 
 const onDeviceCreated = async (device) => {
-    try {
-        const gateway = await Gateway.findById(device.gatewayId); // Find the gateway by device's gatewayId
-
-        if (gateway && !clients[gateway._id]) {
-            await connectToGateways([gateway._id]); // Connect to the gateway if not already connected
-        }
-    } catch (err) {
-        console.error('Error connecting to gateway for device:', err);
+    const gateway = await mysqlDb.Gateway.findByPk(device.gatewayId);
+    if (gateway && !clients[gateway.id]) {
+        await connectToGateways([gateway.id]);
     }
 };
 

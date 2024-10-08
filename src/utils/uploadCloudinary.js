@@ -2,23 +2,21 @@ import cloudinary from "../config/cloudinary.config.js"; // Ensure correct impor
 import CustomError from "../utils/CustomError.js"; // Import your custom error class
 
 const uploadCloudinary = async (file) => {
-  try {
-    const uploadResponse = cloudinary.uploader.upload_stream();
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: 'image' }, // Ensure resource type is specified
+      (error, result) => {
+        if (result) {
+          resolve(result.secure_url); // Use secure_url returned by Cloudinary
+        } else {
+          reject(new CustomError("Failed to upload image to Cloudinary", 500));
+        }
+      }
+    );
 
-    // Return a Promise that resolves when the upload finishes
-    return await new Promise((resolve, reject) => {
-      // Pipe the file stream to Cloudinary's upload stream
-      file.stream.pipe(uploadResponse);
-
-      // Handle the upload response
-      uploadResponse.on("finish", () => resolve(uploadResponse.url));
-      uploadResponse.on("error", (error) => {
-        reject(new CustomError("Failed to upload image to Cloudinary", 500));
-      });
-    });
-  } catch (error) {
-    throw new CustomError("Failed to upload image to Cloudinary", 500);
-  }
+    // Pipe the file buffer into the Cloudinary upload stream
+    stream.end(file.buffer);
+  });
 };
 
 export default uploadCloudinary;

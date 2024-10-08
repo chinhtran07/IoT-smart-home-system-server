@@ -1,27 +1,22 @@
-import mongoose from "mongoose";
-import User from "../src/models/user.model.js"; // Update the path to your MongoDB user model
-import dotenv from 'dotenv';
-
-dotenv.config();
+import mysqldb from "../src/models/mysql/index.js"
 
 const createSuperuser = async () => {
   try {
-    // Connect to the database
-    await mongoose.connect("mongodb://localhost:27017/smart-home");
-
     // Define superuser details
     const superuserDetails = {
       username: 'Admin',
-      password: '123456', // Make sure to hash the password in a real application
+      password: '123456',
       firstName: 'Admin',
       lastName: 'Admin',
       email: 'admin@example.com',
       phone: '1234567890',
-      role: 'admin',
+      role: 'admin', 
     };
 
     // Check if the superuser already exists
-    const existingUser = await User.findOne({ username: superuserDetails.username });
+    const existingUser = await mysqldb.User.findOne({
+      where: { username: superuserDetails.username }
+    });
 
     if (existingUser) {
       console.log('Superuser already exists');
@@ -29,14 +24,12 @@ const createSuperuser = async () => {
     }
 
     // Create the superuser
-    const superuser = new User(superuserDetails);
-    await superuser.save(); // Save the user to the database
+    const superuser = await mysqldb.User.create(superuserDetails);
     console.log('Superuser created successfully:', superuser.username);
-    return;
   } catch (error) {
     console.error('Error creating superuser:', error);
   }
 };
 
 // Run the script
-await createSuperuser();
+createSuperuser();

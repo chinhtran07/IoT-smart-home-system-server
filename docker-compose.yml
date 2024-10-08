@@ -9,9 +9,9 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: Admin@123
       MYSQL_DB: smart_home
-      MONGODB_URI: ${MONGO_URI}
+      MONGODB_URI: ${MONGODB_URI}
       JWT_SECRET: ${JWT_SECRET}
-      JWT_REFRESH_TOKEN: ${JWT_REFRESH_SECRET}
+      JWT_REFRESH_TOKEN: ${JWT_REFRESH_TOKEN}
       REDIS_HOST: redis
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
     volumes:
@@ -22,8 +22,7 @@ services:
       - mysql
       - mongo
       - redis
-    networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
+      - ngrok
 
   mysql:
     image: mysql:8.0
@@ -34,8 +33,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
 
   mongo:
     image: mongo
@@ -45,8 +42,6 @@ services:
       MONGO_INITDB_DATABASE: smarthome
     volumes:
       - mongo_data:/data/db
-    networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
 
   redis:
     image: redis
@@ -54,25 +49,17 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - my_network  # Tham gia vào mạng tùy chỉnh
 
-  # ngrok:
-  #   image: ngrok/ngrok
-  #   environment:
-  #     NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
-  #     NGROK_PORT: "${PORT}"
-  #   ports:
-  #     - "4040:4040"
-  #   command: http app:${PORT}
-  #   networks:
-  #     - my_network  # Tham gia vào mạng tùy chỉnh
+  ngrok:
+    image: wernight/ngrok
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+      NGROK_PORT: "${PORT}"
+    ports:
+      - "4040:4040"
+    command: http app:${PORT}
 
 volumes:
   mysql_data:
   mongo_data:
   redis_data:
-
-networks:
-  my_network:
-    driver: bridge  # Sử dụng driver bridge cho mạng

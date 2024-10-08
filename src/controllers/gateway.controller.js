@@ -1,11 +1,13 @@
-import * as gatewayService from '../services/gateway.service.js';
-import redisClient from '../config/redis.config.js'; 
+import gatewayService from '../services/gateway.services.js';
+import redisClient from '../config/redis.config.js'; // Import Redis client
+import CustomError from '../utils/CustomError.js';
 
 const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
 export const createGateway = async (req, res, next) => {
     try {
         const gatewayData = req.body;
+        console.info(gatewayData);
         const gateway = await gatewayService.createGateway(gatewayData, req.user._id);
         
         // Clear all related cache since a new gateway is created
@@ -20,9 +22,7 @@ export const createGateway = async (req, res, next) => {
 export const addDevice = async (req, res, next) => {
     try {
         const deviceData = req.body;
-        const gatewayId = req.params.id;
-        const userId = req.user._id;
-        const device = await gatewayService.addDevice(deviceData, gatewayId, userId);
+        const device = await gatewayService.addDevice(deviceData, req.params.id, req.user._id);
         
         // Clear cache related to the gateway where the device is added
         await redisClient.del(`gateway:${req.params.id}`);
