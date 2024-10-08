@@ -8,6 +8,7 @@ export const addGroup = async (name, userId, file) => {
   try {
     const url = await uploadCloudinary(file);
     const newGroup = new Group({ name, userId, icon: url });
+    await newGroup.save();
     return newGroup;
   } catch (error) {
     throw new CustomError(`Error creating group: ${error.message}`);
@@ -75,7 +76,8 @@ export const removeDevicesFromGroup = async (groupId, deviceIds) => {
 
 export const getAllGroups = async (userId) => {
   try {
-    const groups = await Group.find({ userId });
+    const groups = await Group.find({ userId: userId });
+    console.log(groups);
     return groups;
   } catch (error) {
     throw new CustomError(`Error fetching groups: ${error.message}`);

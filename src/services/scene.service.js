@@ -1,5 +1,6 @@
 import CustomError from "../utils/CustomError.js";
 import Scene from "../models/scene.model.js";
+import { controlDevice } from "./control.service.js";
 
 // Utility function to handle transactions
 const withTransaction = async (callback) => {
@@ -79,11 +80,25 @@ export const deleteScene = async (sceneId) => {
 // Toggle the active state of a scene
 export const controlScene = async (sceneId) => {
   try {
-    const scene = await Scene.findById(sceneId);
+    // Tìm scene theo ID và lấy actions
+    const scene = await Scene.findById(sceneId).populate("actions", "id deviceId property value");
     if (!scene) throw new CustomError("Scene not found", 404);
 
-    scene.isActive = !scene.isActive;
-    await scene.save();
+    const controlPromises = scene.actions.map(({ deviceId, property, value }) => {
+      const command = { [property]: value }; 
+
+      return controlDevice(deviceId, command); 
+    });
+
+    const results = await Promise.allSettled(controlPromises);
+
+    // Xử lý kết quả
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("Error controlling device:", result.reason);
+      }
+    });
+
     return scene;
   } catch (error) {
     throw new CustomError(error.message);

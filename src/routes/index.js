@@ -11,6 +11,7 @@ import controlRoutes from './control.route.js';
 import accessControlRoutes from './accessControl.route.js';
 import groupRoutes from './group.route.js';
 import sceneRoutes from './scene.route.js';
+import actionRoutes from "./action.route.js";
 
 router.use('/gateways', gatewayRoutes);
 router.use('/users', userRoutes);
@@ -20,5 +21,6 @@ router.use('/control', controlRoutes);
 router.use('/access-control', accessControlRoutes);
 router.use('/groups',groupRoutes);
 router.use('/scenes', sceneRoutes);
+router.use('/actions', actionRoutes);
 
 export default router;

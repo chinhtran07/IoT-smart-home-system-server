@@ -6,9 +6,6 @@ const CACHE_EXPIRY = 3600; // Cache expiry time in seconds (e.g., 1 hour)
 
 export const addGroup = async (req, res, next) => {
   try {
-    console.log("Received file:", req.file); // Log the uploaded file
-    console.log("Received body:", req.body); // Log the body
-
     const userId = req.user._id;
     const file = req.file;
 
@@ -64,18 +61,18 @@ export const getAllGroups = async (req, res, next) => {
     const cacheKey = `groupsByUser:${userId}`;
 
     // Try to fetch from Redis cache first
-    const cachedGroups = await redisClient.get(cacheKey);
-    if (cachedGroups) {
-      return res.status(200).json(JSON.parse(cachedGroups));
-    }
+    // const cachedGroups = await redisClient.get(cacheKey);
+    // if (cachedGroups) {
+    //   return res.status(200).json(JSON.parse(cachedGroups));
+    // }
 
     // If not found in cache, fetch from database
     const groups = await groupService.getAllGroups(userId);
 
     // Cache the result in Redis
-    await redisClient.set(cacheKey, JSON.stringify(groups), {
-      EX: CACHE_EXPIRY,
-    });
+    // await redisClient.set(cacheKey, JSON.stringify(groups), {
+    //   EX: CACHE_EXPIRY,
+    // });
 
     res.status(200).json(groups);
   } catch (error) {
@@ -86,6 +83,7 @@ export const getAllGroups = async (req, res, next) => {
 export const getGroupById = async (req, res, next) => {
   try {
     const groupId = req.params.id;
+    console.log(groupId);
     const cacheKey = `group:${groupId}`;
 
     // Try to fetch from Redis cache first

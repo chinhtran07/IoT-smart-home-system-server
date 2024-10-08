@@ -4,18 +4,6 @@ import SensorData from "../models/sensorData.model.js";
 import Actuator from "../models/actuator.model.js";
 
 export const initSocket = async (io) => {
-  io.use((socket, next) => {
-    const token = socket.handshake.auth.token;
-    if (!token) return next(new Error("Authentication error"));
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) return next(new Error("Authentication error"));
-      socket.user = user;
-      console.log(socket.id);
-      next();
-    });
-  });
-
   io.on("connection", (socket) => {
     console.log(`Client connected: ${socket.id}`);
 
@@ -35,8 +23,10 @@ export const initSocket = async (io) => {
       console.log(`Client disconnected: ${socket.id}`);
     });
 
+    // Đăng ký các sự kiện trong kết nối socket
     const handleDataReceived = async ({ device, data }) => {
       try {
+        console.log("Data received in handleDataReceived:", data); // Thêm log để kiểm tra dữ liệu
         if (device.type === "sensor") {
           // Save sensor data
           await SensorData.create({
@@ -44,24 +34,21 @@ export const initSocket = async (io) => {
             deviceId: device._id,
           });
         } else if (device.type === "actuator") {
-          const actuator = await Actuator.findById(device._id);
-          if (!actuator) return;
 
           // Update properties only if changed
           const updatedProperties = Object.entries(data).reduce((acc, [key, value]) => {
-            if (actuator.properties[key] !== value) {
+            if (device.properties[key] !== value) {
               acc[key] = value;
             }
             return acc;
           }, {});
 
           if (Object.keys(updatedProperties).length) {
-            actuator.properties = { ...actuator.properties, ...updatedProperties };
-            await actuator.save();
+            device.properties = { ...device.properties, ...updatedProperties };
+            await device.save();
           }
         }
 
-        // Emit data to the subscribed clients
         io.to(device._id.toString()).emit("data", data);
       } catch (err) {
         console.error("Error processing data:", err);
@@ -85,14 +72,12 @@ export const initSocket = async (io) => {
       }
     }
 
-    // Attach event listeners once per socket connection
-    myEmitter.on("deviceControl", handleDeviceControl);
+    // Đăng ký sự kiện để xử lý dữ liệu và nhịp tim
     myEmitter.on("dataReceived", handleDataReceived);
     myEmitter.on("heartbeat", handleHeartbeat);
 
     socket.on("disconnect", () => {
       // Cleanup event listeners on disconnect to prevent memory leaks
-      myEmitter.off("deviceControl", handleDeviceControl);
       myEmitter.off("dataReceived", handleDataReceived);
       myEmitter.off("heartbeat", handleHeartbeat);
     });

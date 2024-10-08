@@ -36,20 +36,12 @@ const connectToGateway = async (gateway) => {
 
   client.on("message", async (topic, message) => {
     console.log(`Received message on topic ${topic}: ${message.toString()}`);
-  
+
     try {
-      let device = await redisClient.get(`deviceTopic:${topic}`);
-      if (!device) {
-        device = await Device.findOne({ "topics.publisher": topic });
+      const device = await Device.findOne({ "topics.publisher": topic });
 
-        if (!device) return; 
-
-        await redisClient.set(`deviceTopic:${topic}`, JSON.stringify(device), 'EX', 3600);
-      } else {
-        // Parse cached device if fetched from Redis
-        device = JSON.parse(device);
-      }
-  
+      if (!device) return;
+      
       let data;
       try {
         data = JSON.parse(message.toString());
@@ -57,30 +49,34 @@ const connectToGateway = async (gateway) => {
         console.error(`Invalid JSON received on topic ${topic}:`, err);
         return; // Exit if JSON is invalid
       }
-  
+
       // If the message is not related to the heartbeat, handle the dataReceived event
       if (!data.hasOwnProperty("alive")) {
         myEmitter.emit("dataReceived", { device, data });
         return;
       }
-  
+
       if (!data.alive) return;
-  
+
       // Update device status to online if necessary
       if (!device.status) {
         device.status = true;
         await Device.updateOne({ _id: device._id }, { status: true });
       }
-  
-      await redisClient.set(`heartbeat:${device._id}`, new Date().toISOString(), 'EX', 120); // Expire after 2 minutes
-  
+
+      await redisClient.set(
+        `heartbeat:${device._id}`,
+        new Date().toISOString(),
+        "EX",
+        120
+      ); // Expire after 2 minutes
+
       // Emit the heartbeat event for further processing
       myEmitter.emit("heartbeat", { device, data });
     } catch (error) {
       console.error("Error processing MQTT message:", error.message);
     }
   });
-  
 
   client.on("error", (err) => {
     console.error("MQTT Error:", err);
